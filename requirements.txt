@@ -9,6 +9,7 @@ pillow>=10.0         # renderowane strony jako obrazy
 
 # Lokalne klonowanie barwy (opcjonalnie) — wymaga tez PyTorch, najlepiej GPU
 coqui-tts>=0.24      # XTTS-v2
+transformers>=4.44,<4.48  # zgodne z coqui-tts (isin_mps_friendly)
 
 # Backend chmurowy (opcjonalnie)
 requests>=2.31       # ElevenLabs API
