@@ -28,6 +28,8 @@ plik  ->  ekstrakcja tekstu  ->  czyszczenie  ->  podzial na fragmenty
 - **Podzial na fragmenty** po granicach zdan (heurystyka dla polskiego),
   z poszanowaniem akapitow.
 - **Backendy TTS** (wymienne):
+  - `espeak` — **zero konfiguracji**, offline (espeak-ng); glos "robotyczny",
+    idealny do szybkiego testu calego potoku,
   - `piper` — **lokalny, darmowy, offline**, gotowe polskie glosy (domyslny),
   - `xtts` — **lokalne klonowanie barwy** z probki glosu (XTTS-v2, zero-shot, PL),
   - `elevenlabs` — **chmura**, najlepsza jakosc i klonowanie glosu (wymaga klucza API).
@@ -59,6 +61,10 @@ OCR (Python): `pip install -e ".[ocr]"` (pytesseract + Pillow).
 ## Uzycie
 
 ```bash
+# Najszybszy test calego potoku (zero konfiguracji, glos syntetyczny):
+#   apt-get install espeak-ng
+python -m pdf_audiobook ksiazka.pdf -o out/ --backend espeak --merge
+
 # Lokalnie, Piper (zalecane, offline):
 python -m pdf_audiobook ksiazka.pdf -o out/ \
     --backend piper --voice pl_PL-darkman-medium.onnx --merge

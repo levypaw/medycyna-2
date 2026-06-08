@@ -41,6 +41,54 @@ class TTSBackend(ABC):
 
 
 # --------------------------------------------------------------------------- #
+# espeak-ng — lokalny, offline, zero konfiguracji (jakosc "robotyczna")
+# --------------------------------------------------------------------------- #
+class EspeakBackend(TTSBackend):
+    """Synteza przez `espeak-ng` — dziala od reki, bez pobierania modeli.
+
+    Glos jest syntetyczny ("robotyczny"), ale backend nie wymaga GPU, kluczy
+    ani plikow modeli — idealny do szybkiego testu calego potoku oraz jako
+    fallback, gdy lepsze silniki sa niedostepne.
+    """
+
+    audio_ext = "wav"
+
+    def __init__(
+        self,
+        *,
+        voice: str = "pl",
+        binary: str = "espeak-ng",
+        speed: int = 160,
+        pitch: int = 50,
+    ) -> None:
+        self.voice = voice
+        self.binary = binary
+        self.speed = speed
+        self.pitch = pitch
+
+    def preflight(self) -> None:
+        if shutil.which(self.binary) is None:
+            # Sprobuj tez klasycznego `espeak`.
+            if shutil.which("espeak") is not None:
+                self.binary = "espeak"
+            else:
+                raise TTSError(
+                    f"Nie znaleziono '{self.binary}'. Zainstaluj espeak-ng "
+                    "(apt-get install espeak-ng)."
+                )
+
+    def synthesize(self, text: str, out_path: Path) -> None:
+        cmd = [
+            self.binary, "-v", self.voice,
+            "-s", str(self.speed), "-p", str(self.pitch),
+            "-w", str(out_path), text,
+        ]
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+        if proc.returncode != 0 or not out_path.exists():
+            raise TTSError(f"espeak-ng nie powiodl sie:\n{proc.stderr[-1000:]}")
+
+
+# --------------------------------------------------------------------------- #
 # Piper — lokalny, offline
 # --------------------------------------------------------------------------- #
 class PiperBackend(TTSBackend):
@@ -264,6 +312,11 @@ class XTTSBackend(TTSBackend):
 def build_backend(name: str, **kwargs) -> TTSBackend:
     """Tworzy backend po nazwie. Nieznane kwargs sa ignorowane przez backend."""
     name = name.lower()
+    if name == "espeak":
+        return EspeakBackend(
+            voice=kwargs.get("language", "pl"),
+            speed=int(kwargs.get("speed_wpm", 160)),
+        )
     if name == "piper":
         return PiperBackend(
             model_path=kwargs["voice"],
@@ -283,5 +336,5 @@ def build_backend(name: str, **kwargs) -> TTSBackend:
             device=kwargs.get("device"),
         )
     raise TTSError(
-        f"Nieznany backend TTS: {name}. Dostepne: piper, xtts, elevenlabs"
+        f"Nieznany backend TTS: {name}. Dostepne: espeak, piper, xtts, elevenlabs"
     )

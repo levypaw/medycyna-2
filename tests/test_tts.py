@@ -4,11 +4,20 @@ import pytest
 
 from pdf_audiobook.tts import (
     ElevenLabsBackend,
+    EspeakBackend,
     PiperBackend,
     TTSError,
     XTTSBackend,
     build_backend,
 )
+
+
+def test_build_backend_espeak():
+    b = build_backend("espeak", language="pl", speed_wpm=170)
+    assert isinstance(b, EspeakBackend)
+    assert b.voice == "pl"
+    assert b.speed == 170
+    assert b.audio_ext == "wav"
 
 
 def test_build_backend_piper():
@@ -34,7 +43,7 @@ def test_build_backend_unknown_lists_options():
     with pytest.raises(TTSError) as exc:
         build_backend("nieistniejacy", voice="x")
     msg = str(exc.value)
-    assert "piper" in msg and "xtts" in msg and "elevenlabs" in msg
+    assert all(x in msg for x in ("espeak", "piper", "xtts", "elevenlabs"))
 
 
 def test_xtts_preflight_missing_reference(tmp_path):

@@ -42,11 +42,11 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("-o", "--out-dir", default="audiobook_out",
                    help="Katalog wyjsciowy (domyslnie: audiobook_out)")
     p.add_argument("--backend", default="piper",
-                   choices=["piper", "xtts", "elevenlabs"],
-                   help="Silnik TTS (domyslnie: piper)")
+                   choices=["espeak", "piper", "xtts", "elevenlabs"],
+                   help="Silnik TTS (domyslnie: piper; espeak = test bez konfiguracji)")
     p.add_argument("--voice",
                    help="Glos wg backendu: sciezka .onnx (piper), plik referencyjny "
-                        ".wav (xtts) lub voice_id (elevenlabs)")
+                        ".wav (xtts) lub voice_id (elevenlabs). Niewymagany dla espeak")
     p.add_argument("--language", default="pl",
                    help="XTTS: jezyk syntezy (domyslnie pl)")
     p.add_argument("--speed", type=float, default=1.0,
@@ -113,7 +113,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"\n=== [{ch.index}] {ch.title} ===\n{text[:500]}...")
         return 0
 
-    if not args.voice:
+    if not args.voice and args.backend != "espeak":
         print("Blad: --voice jest wymagany przy syntezie (sciezka .onnx dla piper, "
               "plik referencyjny .wav dla xtts lub voice_id dla elevenlabs).",
               file=sys.stderr)
