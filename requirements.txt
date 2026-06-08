@@ -3,6 +3,10 @@ pymupdf>=1.24        # PDF
 ebooklib>=0.18       # EPUB
 beautifulsoup4>=4.12 # parsowanie HTML z EPUB
 
+# OCR dla skanowanych PDF (opcjonalnie)
+pytesseract>=0.3.10  # most do binarki Tesseract
+pillow>=10.0         # renderowane strony jako obrazy
+
 # Backend chmurowy (opcjonalnie)
 requests>=2.31       # ElevenLabs API
 

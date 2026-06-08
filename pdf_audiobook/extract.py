@@ -47,15 +47,27 @@ class ExtractionError(RuntimeError):
 # --------------------------------------------------------------------------- #
 # Dyspozytor wg rozszerzenia
 # --------------------------------------------------------------------------- #
-def extract(path: str | Path) -> Book:
-    """Wybiera ekstraktor na podstawie rozszerzenia pliku."""
+def extract(
+    path: str | Path,
+    *,
+    ocr: str = "auto",
+    ocr_lang: str = "pol",
+    ocr_dpi: int = 300,
+) -> Book:
+    """Wybiera ekstraktor na podstawie rozszerzenia pliku.
+
+    OCR (tylko PDF):
+        ocr="auto"  — OCR tylko stron bez warstwy tekstowej (jesli dostepny),
+        ocr="force" — OCR wszystkich stron (ignoruje warstwe tekstowa),
+        ocr="off"   — bez OCR.
+    """
     path = Path(path)
     if not path.exists():
         raise ExtractionError(f"Plik nie istnieje: {path}")
 
     suffix = path.suffix.lower()
     if suffix == ".pdf":
-        return _extract_pdf(path)
+        return _extract_pdf(path, ocr=ocr, ocr_lang=ocr_lang, ocr_dpi=ocr_dpi)
     if suffix == ".epub":
         return _extract_epub(path)
     if suffix in {".mobi", ".azw", ".azw3", ".fb2", ".lit", ".pdb"}:
@@ -71,7 +83,9 @@ def extract(path: str | Path) -> Book:
 # --------------------------------------------------------------------------- #
 # PDF
 # --------------------------------------------------------------------------- #
-def _extract_pdf(path: Path) -> Book:
+def _extract_pdf(
+    path: Path, *, ocr: str = "auto", ocr_lang: str = "pol", ocr_dpi: int = 300
+) -> Book:
     try:
         import fitz  # PyMuPDF
     except ImportError as exc:  # pragma: no cover - zalezne od srodowiska
@@ -79,13 +93,36 @@ def _extract_pdf(path: Path) -> Book:
             "Do PDF potrzebny jest PyMuPDF. Zainstaluj: pip install pymupdf"
         ) from exc
 
+    from . import ocr as ocr_mod
+
     doc = fitz.open(path)
-    pages = [page.get_text("text") for page in doc]
+    pages = ["" if ocr == "force" else page.get_text("text") for page in doc]
+
+    needs_ocr = ocr == "force" or (
+        ocr == "auto"
+        and any(len(p.strip()) < ocr_mod.MIN_TEXT_CHARS for p in pages)
+    )
+
+    if needs_ocr:
+        if not ocr_mod.ocr_available():
+            if all(not p.strip() for p in pages):
+                doc.close()
+                raise ExtractionError(
+                    "Brak warstwy tekstowej (skan), a OCR nie jest dostepny. "
+                    "Zainstaluj: pip install pytesseract pillow oraz Tesseract "
+                    "z modelem 'pol'. Szczegoly: pdf_audiobook/ocr.py"
+                )
+            # Czesc stron ma tekst — kontynuuj bez OCR pozostalych.
+        else:
+            ocr_mod.assert_available(ocr_lang)
+            for i, page in enumerate(doc):
+                if ocr == "force" or len(pages[i].strip()) < ocr_mod.MIN_TEXT_CHARS:
+                    pages[i] = ocr_mod.ocr_page(page, lang=ocr_lang, dpi=ocr_dpi)
 
     if all(not p.strip() for p in pages):
+        doc.close()
         raise ExtractionError(
-            "Nie wyciagnieto tekstu — to prawdopodobnie skan. "
-            "Wersja bez OCR; uzyj PDF z warstwa tekstowa lub dodaj OCR (Tesseract)."
+            "Nie wyciagnieto tekstu — to prawdopodobnie pusty lub uszkodzony plik."
         )
 
     # Usun naglowki/stopki powtarzajace sie na wielu stronach.

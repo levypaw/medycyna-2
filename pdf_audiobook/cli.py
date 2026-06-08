@@ -41,6 +41,13 @@ def _build_parser() -> argparse.ArgumentParser:
                    help="Piper: tempo mowy; >1 wolniej/dostojniej (domyslnie 1.05)")
     p.add_argument("--max-chars", type=int, default=600,
                    help="Maks. dlugosc fragmentu wysylanego do TTS (domyslnie 600)")
+    p.add_argument("--ocr", default="auto", choices=["auto", "force", "off"],
+                   help="OCR dla PDF: auto=tylko skany, force=wszystkie strony, off "
+                        "(domyslnie auto)")
+    p.add_argument("--ocr-lang", default="pol",
+                   help="Jezyk(i) OCR Tesseract, np. 'pol' lub 'pol+eng' (domyslnie pol)")
+    p.add_argument("--ocr-dpi", type=int, default=300,
+                   help="Rozdzielczosc renderowania strony do OCR (domyslnie 300)")
     p.add_argument("--merge", action="store_true",
                    help="Polacz rozdzialy w jeden plik audiobooka")
     p.add_argument("--keep-chunks", action="store_true",
@@ -64,7 +71,9 @@ def main(argv: list[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
 
     try:
-        book = extract(args.input)
+        book = extract(
+            args.input, ocr=args.ocr, ocr_lang=args.ocr_lang, ocr_dpi=args.ocr_dpi
+        )
     except ExtractionError as exc:
         print(f"Blad ekstrakcji: {exc}", file=sys.stderr)
         return 2
