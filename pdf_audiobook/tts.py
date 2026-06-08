@@ -263,9 +263,15 @@ class XTTSBackend(TTSBackend):
         try:
             from TTS.api import TTS  # noqa: F401  (pakiet: coqui-tts)
         except ImportError as exc:
+            missing = getattr(exc, "name", None)
+            hint = ""
+            if missing in {"torch", "torchaudio"}:
+                hint = " Brakuje PyTorcha — zainstaluj: pip install torch torchaudio."
+            elif missing in {"TTS", None}:
+                hint = " Zainstaluj: pip install coqui-tts torch torchaudio."
             raise TTSError(
-                "XTTS wymaga: pip install coqui-tts (oraz PyTorch). "
-                "Najlepiej z GPU."
+                f"Nie mozna zaladowac XTTS (brak modulu: {missing}).{hint} "
+                f"Pelny blad importu: {exc}"
             ) from exc
         self._load()
 
