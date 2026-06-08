@@ -17,6 +17,7 @@ from pathlib import Path
 from .chunk import chunk_text
 from .clean import clean_text
 from .extract import Book
+from .normalize import normalize_text
 from .tts import TTSBackend
 
 
@@ -24,6 +25,7 @@ from .tts import TTSBackend
 class SynthOptions:
     max_chars: int = 600
     keep_chunks: bool = False
+    normalize: bool = True
 
 
 @dataclass
@@ -70,6 +72,8 @@ def synthesize_book(
     prepared: list[tuple[int, list[str]]] = []
     for ch in book.chapters:
         text = clean_text(ch.text)
+        if opts.normalize:
+            text = normalize_text(text)
         prepared.append((ch.index, chunk_text(text, opts.max_chars)))
     total = sum(len(c) for _, c in prepared) or 1
 

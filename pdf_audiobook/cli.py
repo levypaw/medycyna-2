@@ -29,6 +29,7 @@ from .audiobook import (
 )
 from .clean import clean_text
 from .extract import ExtractionError, extract
+from .normalize import normalize_text
 from .tts import TTSError, build_backend
 
 
@@ -68,6 +69,8 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--cover", help="Sciezka do okladki (jpg/png) dla M4B")
     p.add_argument("--author", help="Autor ksiazki (metadane M4B)")
     p.add_argument("--title", help="Tytul (nadpisuje wykryty; metadane/nazwa pliku)")
+    p.add_argument("--no-normalize", dest="normalize", action="store_false",
+                   help="Wylacz normalizacje tekstu PL (skroty, liczby, l. rzymskie)")
     p.add_argument("--keep-chunks", action="store_true",
                    help="Nie usuwaj posrednich plikow fragmentow")
     p.add_argument("--dry-run", action="store_true",
@@ -104,8 +107,10 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.dry_run:
         for ch in book.chapters:
-            preview = clean_text(ch.text)[:500]
-            print(f"\n=== [{ch.index}] {ch.title} ===\n{preview}...")
+            text = clean_text(ch.text)
+            if args.normalize:
+                text = normalize_text(text)
+            print(f"\n=== [{ch.index}] {ch.title} ===\n{text[:500]}...")
         return 0
 
     if not args.voice:
@@ -122,7 +127,11 @@ def main(argv: list[str] | None = None) -> int:
             language=args.language,
             speed=args.speed,
         )
-        opts = SynthOptions(max_chars=args.max_chars, keep_chunks=args.keep_chunks)
+        opts = SynthOptions(
+            max_chars=args.max_chars,
+            keep_chunks=args.keep_chunks,
+            normalize=args.normalize,
+        )
         chapters_out = synthesize_book(
             book, backend, args.out_dir, opts, progress=_progress
         )

@@ -21,6 +21,10 @@ plik  ->  ekstrakcja tekstu  ->  czyszczenie  ->  podzial na fragmenty
 - **Czyszczenie tekstu**: sklejanie wyrazow dzielonych na koncu wiersza,
   usuwanie numerow stron, scalanie zawijanych linii, normalizacja interpunkcji
   — zeby lektor frazowal naturalnie.
+- **Normalizacja PL pod lektora**: rozwijanie skrotow (`np.`→na przyklad,
+  `m.in.`→miedzy innymi, `dr`→doktor, `r.`→roku), liczby arabskie na slowa
+  (`1939`→tysiac dziewiecset trzydziesci dziewiec) i liczby rzymskie w kontekscie
+  (`rozdzial III`→trzeci, `XIX wiek`→dziewietnasty). Wylaczane `--no-normalize`.
 - **Podzial na fragmenty** po granicach zdan (heurystyka dla polskiego),
   z poszanowaniem akapitow.
 - **Backendy TTS** (wymienne):
@@ -112,5 +116,7 @@ pytest -q
 
 ## Plany / mozliwe rozszerzenia
 
-- Slownik wymowy/skrotow i lepsza normalizacja liczb i dat po polsku.
+- Pelna **deklinacja** liczebnikow i porzadkowych wg przypadka (teraz forma
+  mianownikowa, np. "rozdziale trzeci" zamiast "trzecim") — zrozumiale dla
+  lektora, ale gramatycznie uproszczone.
 - Rownolegla synteza fragmentow i wznawianie przerwanej pracy.
