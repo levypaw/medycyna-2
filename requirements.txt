@@ -1,0 +1,12 @@
+# Ekstrakcja tekstu
+pymupdf>=1.24        # PDF
+ebooklib>=0.18       # EPUB
+beautifulsoup4>=4.12 # parsowanie HTML z EPUB
+
+# Backend chmurowy (opcjonalnie)
+requests>=2.31       # ElevenLabs API
+
+# Narzedzia zewnetrzne (instalowane poza pip):
+#   * Piper  (lokalny TTS)         -> https://github.com/rhasspy/piper
+#   * Calibre (ebook-convert, MOBI) -> https://calibre-ebook.com
+#   * ffmpeg (laczenie/M4B)         -> https://ffmpeg.org

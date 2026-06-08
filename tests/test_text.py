@@ -1,0 +1,51 @@
+"""Testy logiki czysto-pythonowej (bez zewnetrznych narzedzi/silnikow)."""
+
+from pdf_audiobook.chunk import chunk_text, split_sentences
+from pdf_audiobook.clean import clean_text
+
+
+def test_dehyphenation_joins_broken_words():
+    raw = "To jest infor-\nmacja o czyms."
+    assert "informacja" in clean_text(raw)
+
+
+def test_single_newlines_become_spaces_but_paragraphs_stay():
+    raw = "Pierwsza linia\ndruga linia.\n\nNowy akapit."
+    out = clean_text(raw)
+    assert "Pierwsza linia druga linia." in out
+    assert "\n\n" in out
+
+
+def test_page_number_lines_removed():
+    raw = "Tekst rozdzialu.\n\n42\n\nDalszy tekst."
+    out = clean_text(raw)
+    assert "\n42\n" not in out
+    assert "Dalszy tekst." in out
+
+
+def test_split_sentences_polish():
+    text = "Pierwsze zdanie. Drugie zdanie! Trzecie zdanie?"
+    assert split_sentences(text) == [
+        "Pierwsze zdanie.",
+        "Drugie zdanie!",
+        "Trzecie zdanie?",
+    ]
+
+
+def test_chunk_respects_max_chars():
+    sentences = " ".join(f"Zdanie numer {i}." for i in range(200))
+    chunks = chunk_text(sentences, max_chars=100)
+    assert chunks
+    assert all(len(c) <= 100 for c in chunks)
+
+
+def test_chunk_keeps_oversized_sentence_whole():
+    long_sentence = "Slowo " * 100 + "koniec."
+    chunks = chunk_text(long_sentence.strip(), max_chars=50)
+    assert any(len(c) > 50 for c in chunks)
+
+
+def test_chunk_breaks_on_paragraphs():
+    text = "Akapit jeden.\n\nAkapit dwa."
+    chunks = chunk_text(text, max_chars=1000)
+    assert chunks == ["Akapit jeden.", "Akapit dwa."]
