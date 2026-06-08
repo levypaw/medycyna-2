@@ -7,6 +7,9 @@ beautifulsoup4>=4.12 # parsowanie HTML z EPUB
 pytesseract>=0.3.10  # most do binarki Tesseract
 pillow>=10.0         # renderowane strony jako obrazy
 
+# Lokalne klonowanie barwy (opcjonalnie) — wymaga tez PyTorch, najlepiej GPU
+coqui-tts>=0.24      # XTTS-v2
+
 # Backend chmurowy (opcjonalnie)
 requests>=2.31       # ElevenLabs API
 

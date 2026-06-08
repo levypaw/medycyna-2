@@ -169,6 +169,96 @@ class ElevenLabsBackend(TTSBackend):
 
 
 # --------------------------------------------------------------------------- #
+# XTTS-v2 — lokalne klonowanie barwy z probki (Coqui)
+# --------------------------------------------------------------------------- #
+class XTTSBackend(TTSBackend):
+    """Lokalna synteza z klonowaniem barwy przez XTTS-v2.
+
+    Model zero-shot: barwe glosu przejmuje z pliku referencyjnego (`speaker_wav`)
+    — kilka do kilkunastu sekund czystej mowy (najlepiej >6 s, bez muzyki/szumu).
+    Obsluguje jezyk polski. Dziala na CPU, ale realnie wymaga GPU dla rozsadnego
+    czasu syntezy.
+
+    Wymaga: pip install coqui-tts  (oraz PyTorch). Model pobiera sie automatycznie
+    przy pierwszym uruchomieniu.
+
+    UWAGA PRAWNA: klonowanie barwy rozpoznawalnej, zyjacej osoby (np. konkretnego
+    lektora) jest dopuszczalne tylko za jej zgoda lub do wlasnego, prywatnego
+    uzytku — nie do dystrybucji. Glos jest dobrem osobistym (art. 23 KC).
+    """
+
+    audio_ext = "wav"
+    DEFAULT_MODEL = "tts_models/multilingual/multi-dataset/xtts_v2"
+
+    def __init__(
+        self,
+        speaker_wav: str | Path,
+        *,
+        language: str = "pl",
+        model_name: str | None = None,
+        device: str | None = None,
+        speed: float = 1.0,
+    ) -> None:
+        self.speaker_wav = Path(speaker_wav)
+        self.language = language
+        self.model_name = model_name or self.DEFAULT_MODEL
+        self.device = device
+        self.speed = speed
+        self._tts = None  # leniwie ladowany model (ciezki)
+
+    def preflight(self) -> None:
+        if not self.speaker_wav.exists():
+            raise TTSError(
+                f"Brak pliku referencyjnego barwy: {self.speaker_wav}. "
+                "Podaj nagranie glosu (kilka-kilkanascie sekund czystej mowy)."
+            )
+        try:
+            from TTS.api import TTS  # noqa: F401  (pakiet: coqui-tts)
+        except ImportError as exc:
+            raise TTSError(
+                "XTTS wymaga: pip install coqui-tts (oraz PyTorch). "
+                "Najlepiej z GPU."
+            ) from exc
+        self._load()
+
+    def _load(self) -> None:
+        if self._tts is not None:
+            return
+        from TTS.api import TTS
+
+        device = self.device
+        if device is None:
+            try:
+                import torch
+
+                device = "cuda" if torch.cuda.is_available() else "cpu"
+            except ImportError:
+                device = "cpu"
+        self._tts = TTS(self.model_name).to(device)
+
+    def synthesize(self, text: str, out_path: Path) -> None:
+        self._load()
+        try:
+            self._tts.tts_to_file(
+                text=text,
+                speaker_wav=str(self.speaker_wav),
+                language=self.language,
+                speed=self.speed,
+                file_path=str(out_path),
+            )
+        except TypeError:
+            # Starsze wersje API bez parametru `speed`.
+            self._tts.tts_to_file(
+                text=text,
+                speaker_wav=str(self.speaker_wav),
+                language=self.language,
+                file_path=str(out_path),
+            )
+        if not out_path.exists():
+            raise TTSError("XTTS nie wygenerowal pliku audio.")
+
+
+# --------------------------------------------------------------------------- #
 # Fabryka
 # --------------------------------------------------------------------------- #
 def build_backend(name: str, **kwargs) -> TTSBackend:
@@ -185,4 +275,13 @@ def build_backend(name: str, **kwargs) -> TTSBackend:
             voice_id=kwargs["voice"],
             model_id=kwargs.get("model_id", "eleven_multilingual_v2"),
         )
-    raise TTSError(f"Nieznany backend TTS: {name}. Dostepne: piper, elevenlabs")
+    if name == "xtts":
+        return XTTSBackend(
+            speaker_wav=kwargs["voice"],
+            language=kwargs.get("language", "pl"),
+            speed=kwargs.get("speed", 1.0),
+            device=kwargs.get("device"),
+        )
+    raise TTSError(
+        f"Nieznany backend TTS: {name}. Dostepne: piper, xtts, elevenlabs"
+    )

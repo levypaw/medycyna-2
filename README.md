@@ -25,6 +25,7 @@ plik  ->  ekstrakcja tekstu  ->  czyszczenie  ->  podzial na fragmenty
   z poszanowaniem akapitow.
 - **Backendy TTS** (wymienne):
   - `piper` — **lokalny, darmowy, offline**, gotowe polskie glosy (domyslny),
+  - `xtts` — **lokalne klonowanie barwy** z probki glosu (XTTS-v2, zero-shot, PL),
   - `elevenlabs` — **chmura**, najlepsza jakosc i klonowanie glosu (wymaga klucza API).
 - **Skladanie audiobooka** per rozdzial i (opcjonalnie) w jeden plik;
   uzywa `ffmpeg`, a dla WAV ma czysto-pythonowy fallback (dziala bez ffmpeg).
@@ -45,6 +46,7 @@ Narzedzia zewnetrzne (wg potrzeb):
 | **Calibre** (`ebook-convert`) | format MOBI/AZW3 | https://calibre-ebook.com |
 | **ffmpeg** | laczenie / format M4B | https://ffmpeg.org |
 | **Tesseract** + model `pol` | OCR skanow | `apt-get install tesseract-ocr tesseract-ocr-pol` |
+| **coqui-tts** + PyTorch | klonowanie barwy (XTTS) | `pip install -e ".[xtts]"` (GPU zalecane) |
 
 OCR (Python): `pip install -e ".[ocr]"` (pytesseract + Pillow).
 
@@ -58,6 +60,11 @@ python -m pdf_audiobook ksiazka.pdf -o out/ \
 # Wolniej / dostojniej (charakter lektorski):
 python -m pdf_audiobook ksiazka.pdf -o out/ \
     --backend piper --voice glos.onnx --length-scale 1.15
+
+# Lokalne klonowanie barwy z probki (XTTS-v2; --voice = nagranie referencyjne):
+python -m pdf_audiobook ksiazka.pdf -o out/ \
+    --backend xtts --voice probka_glosu.wav --language pl --merge
+# Probka: kilka-kilkanascie sekund czystej mowy. Realnie wymaga GPU.
 
 # Chmura, ElevenLabs (najlepsza jakosc; klucz w srodowisku):
 export ELEVENLABS_API_KEY=...
@@ -75,15 +82,17 @@ python -m pdf_audiobook skan.pdf --dry-run --ocr force
 python -m pdf_audiobook ksiazka.epub --dry-run
 ```
 
-Najwazniejsze flagi: `--backend`, `--voice`, `--length-scale`, `--max-chars`,
-`--merge`, `--keep-chunks`, `--dry-run`. Pelna lista: `--help`.
+Najwazniejsze flagi: `--backend`, `--voice`, `--language`, `--speed`,
+`--length-scale`, `--max-chars`, `--ocr`, `--merge`, `--keep-chunks`,
+`--dry-run`. Pelna lista: `--help`.
 
 ## Uwaga prawna — glos konkretnego lektora
 
-Glos rozpoznawalnej, zyjacej osoby (np. konkretnego lektora) jest **dobrem
+Narzedzie *potrafi* klonowac barwe (backendy `xtts` i `elevenlabs`), ale glos
+rozpoznawalnej, zyjacej osoby (np. konkretnego lektora) jest **dobrem
 osobistym** (art. 23 Kodeksu cywilnego), a regulaminy uslug do klonowania
-(np. ElevenLabs) zwykle **wymagaja zgody** tej osoby. Dlatego domyslnie
-narzedzie celuje w glos **o pozadanych cechach** (barwa, tempo, intonacja),
+(np. ElevenLabs) zwykle **wymagaja zgody** tej osoby. Domyslnym, bezpiecznym
+wyborem jest wiec glos **o pozadanych cechach** (barwa, tempo, intonacja),
 a nie w wierna kopie konkretnej osoby. Klonowanie z probek konkretnego lektora
 rob wylacznie do wlasnego, prywatnego uzytku i tylko za zgoda — nie do
 dystrybucji.
@@ -98,6 +107,5 @@ pytest -q
 ## Plany / mozliwe rozszerzenia
 
 - Eksport **M4B z rozdzialami** i metadanymi (okladka, tytul, autor).
-- Backend lokalnego **klonowania** (XTTS-v2 / F5-TTS) dla barwy z probki.
 - Slownik wymowy/skrotow i lepsza normalizacja liczb i dat po polsku.
 - Rownolegla synteza fragmentow i wznawianie przerwanej pracy.

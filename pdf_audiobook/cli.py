@@ -34,9 +34,16 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("input", help="Sciezka do pliku ksiazki (.pdf/.epub/.mobi/.txt)")
     p.add_argument("-o", "--out-dir", default="audiobook_out",
                    help="Katalog wyjsciowy (domyslnie: audiobook_out)")
-    p.add_argument("--backend", default="piper", choices=["piper", "elevenlabs"],
+    p.add_argument("--backend", default="piper",
+                   choices=["piper", "xtts", "elevenlabs"],
                    help="Silnik TTS (domyslnie: piper)")
-    p.add_argument("--voice", help="Model glosu: sciezka .onnx (piper) lub voice_id (elevenlabs)")
+    p.add_argument("--voice",
+                   help="Glos wg backendu: sciezka .onnx (piper), plik referencyjny "
+                        ".wav (xtts) lub voice_id (elevenlabs)")
+    p.add_argument("--language", default="pl",
+                   help="XTTS: jezyk syntezy (domyslnie pl)")
+    p.add_argument("--speed", type=float, default=1.0,
+                   help="XTTS: tempo mowy (1.0 = normalne)")
     p.add_argument("--length-scale", type=float, default=1.05,
                    help="Piper: tempo mowy; >1 wolniej/dostojniej (domyslnie 1.05)")
     p.add_argument("--max-chars", type=int, default=600,
@@ -88,14 +95,18 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if not args.voice:
-        print("Blad: --voice jest wymagany przy syntezie "
-              "(sciezka .onnx dla piper lub voice_id dla elevenlabs).",
+        print("Blad: --voice jest wymagany przy syntezie (sciezka .onnx dla piper, "
+              "plik referencyjny .wav dla xtts lub voice_id dla elevenlabs).",
               file=sys.stderr)
         return 2
 
     try:
         backend = build_backend(
-            args.backend, voice=args.voice, length_scale=args.length_scale
+            args.backend,
+            voice=args.voice,
+            length_scale=args.length_scale,
+            language=args.language,
+            speed=args.speed,
         )
         opts = SynthOptions(max_chars=args.max_chars, keep_chunks=args.keep_chunks)
         chapter_files = synthesize_book(

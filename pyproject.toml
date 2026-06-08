@@ -16,6 +16,7 @@ dependencies = [
 
 [project.optional-dependencies]
 elevenlabs = ["requests>=2.31"]
+xtts = ["coqui-tts>=0.24"]
 ocr = ["pytesseract>=0.3.10", "pillow>=10.0"]
 dev = ["pytest>=8.0"]
 
