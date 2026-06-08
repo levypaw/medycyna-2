@@ -115,6 +115,15 @@ Najwazniejsze flagi: `--backend`, `--voice`, `--language`, `--speed`,
 `--length-scale`, `--max-chars`, `--ocr`, `--merge`, `--keep-chunks`,
 `--dry-run`. Pelna lista: `--help`.
 
+### Rozwiazywanie problemow (XTTS)
+
+`ImportError: cannot import name 'isin_mps_friendly'` — masz zbyt nowy
+`transformers` wzgledem `coqui-tts`. Ustaw zgodna pare:
+
+```bash
+pip install "coqui-tts==0.25.1" "transformers==4.46.2"
+```
+
 ## Uwaga prawna — glos konkretnego lektora
 
 Narzedzie *potrafi* klonowac barwe (backendy `xtts` i `elevenlabs`), ale glos

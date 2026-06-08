@@ -16,9 +16,10 @@ dependencies = [
 
 [project.optional-dependencies]
 elevenlabs = ["requests>=2.31"]
-# transformers przypiety: nowsze wersje usunely isin_mps_friendly,
-# czego wymaga coqui-tts (XTTS) -> import sie wywala.
-xtts = ["coqui-tts>=0.24", "transformers>=4.44,<4.48"]
+# Spojna para: coqui-tts 0.25.x dziala z transformers <=4.46.2 (ma
+# isin_mps_friendly). Nowsze coqui-tts (0.27.x) wymagaja transformers>=4.57,
+# ktore te funkcje usunely -> import XTTS sie wywala. Przypiete celowo.
+xtts = ["coqui-tts>=0.25.1,<0.26", "transformers>=4.43,<=4.46.2"]
 ocr = ["pytesseract>=0.3.10", "pillow>=10.0"]
 dev = ["pytest>=8.0"]
 
