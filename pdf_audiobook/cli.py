@@ -20,7 +20,13 @@ import sys
 from pathlib import Path
 
 from . import __version__
-from .audiobook import SynthOptions, merge_chapters, synthesize_book
+from .audiobook import (
+    BookMeta,
+    SynthOptions,
+    export_m4b,
+    merge_chapters,
+    synthesize_book,
+)
 from .clean import clean_text
 from .extract import ExtractionError, extract
 from .tts import TTSError, build_backend
@@ -57,6 +63,11 @@ def _build_parser() -> argparse.ArgumentParser:
                    help="Rozdzielczosc renderowania strony do OCR (domyslnie 300)")
     p.add_argument("--merge", action="store_true",
                    help="Polacz rozdzialy w jeden plik audiobooka")
+    p.add_argument("--m4b", action="store_true",
+                   help="Eksportuj audiobook .m4b z rozdzialami i metadanymi (ffmpeg)")
+    p.add_argument("--cover", help="Sciezka do okladki (jpg/png) dla M4B")
+    p.add_argument("--author", help="Autor ksiazki (metadane M4B)")
+    p.add_argument("--title", help="Tytul (nadpisuje wykryty; metadane/nazwa pliku)")
     p.add_argument("--keep-chunks", action="store_true",
                    help="Nie usuwaj posrednich plikow fragmentow")
     p.add_argument("--dry-run", action="store_true",
@@ -85,6 +96,9 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Blad ekstrakcji: {exc}", file=sys.stderr)
         return 2
 
+    if args.title:
+        book.title = args.title
+
     print(f"Tytul: {book.title}", file=sys.stderr)
     print(f"Rozdzialow: {len(book.chapters)}", file=sys.stderr)
 
@@ -109,20 +123,31 @@ def main(argv: list[str] | None = None) -> int:
             speed=args.speed,
         )
         opts = SynthOptions(max_chars=args.max_chars, keep_chunks=args.keep_chunks)
-        chapter_files = synthesize_book(
+        chapters_out = synthesize_book(
             book, backend, args.out_dir, opts, progress=_progress
         )
     except TTSError as exc:
         print(f"\nBlad TTS: {exc}", file=sys.stderr)
         return 3
 
-    print(f"Zapisano {len(chapter_files)} plik(ow) rozdzialow w {args.out_dir}",
+    print(f"Zapisano {len(chapters_out)} plik(ow) rozdzialow w {args.out_dir}",
           file=sys.stderr)
 
-    if args.merge and chapter_files:
+    chapter_files = [p for p, _ in chapters_out]
+    titles = [t for _, t in chapters_out]
+
+    if args.m4b and chapter_files:
+        meta = BookMeta(title=book.title, author=args.author, cover=args.cover)
+        try:
+            out_file = Path(args.out_dir) / book.title
+            m4b = export_m4b(chapter_files, out_file, titles, meta)
+        except (RuntimeError, ValueError) as exc:
+            print(f"\nBlad eksportu M4B: {exc}", file=sys.stderr)
+            return 4
+        print(f"Audiobook (M4B): {m4b}", file=sys.stderr)
+    elif args.merge and chapter_files:
         ext = chapter_files[0].suffix
         out_file = Path(args.out_dir) / f"{book.title}{ext}"
-        titles = [ch.title for ch in book.chapters]
         merged = merge_chapters(chapter_files, out_file, titles=titles)
         print(f"Audiobook: {merged}", file=sys.stderr)
 

@@ -29,6 +29,8 @@ plik  ->  ekstrakcja tekstu  ->  czyszczenie  ->  podzial na fragmenty
   - `elevenlabs` — **chmura**, najlepsza jakosc i klonowanie glosu (wymaga klucza API).
 - **Skladanie audiobooka** per rozdzial i (opcjonalnie) w jeden plik;
   uzywa `ffmpeg`, a dla WAV ma czysto-pythonowy fallback (dziala bez ffmpeg).
+- **Eksport M4B** z **rozdzialami** (markery), **metadanymi** (tytul, autor)
+  i **okladka** — gotowy format audiobooka dla wiekszosci odtwarzaczy.
 
 ## Instalacja
 
@@ -71,6 +73,10 @@ export ELEVENLABS_API_KEY=...
 python -m pdf_audiobook ksiazka.mobi -o out/ \
     --backend elevenlabs --voice <voice_id> --merge
 
+# Eksport gotowego audiobooka M4B (rozdzialy + metadane + okladka):
+python -m pdf_audiobook ksiazka.pdf -o out/ --backend piper --voice glos.onnx \
+    --m4b --title "Tytul ksiazki" --author "Autor" --cover okladka.jpg
+
 # Skanowany PDF (OCR): auto OCR-uje tylko strony bez tekstu
 python -m pdf_audiobook skan.pdf -o out/ --backend piper --voice glos.onnx \
     --ocr auto --ocr-lang pol
@@ -106,6 +112,5 @@ pytest -q
 
 ## Plany / mozliwe rozszerzenia
 
-- Eksport **M4B z rozdzialami** i metadanymi (okladka, tytul, autor).
 - Slownik wymowy/skrotow i lepsza normalizacja liczb i dat po polsku.
 - Rownolegla synteza fragmentow i wznawianie przerwanej pracy.
