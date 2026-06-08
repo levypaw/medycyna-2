@@ -51,6 +51,8 @@ def _build_parser() -> argparse.ArgumentParser:
                    help="XTTS: jezyk syntezy (domyslnie pl)")
     p.add_argument("--speed", type=float, default=1.0,
                    help="XTTS: tempo mowy (1.0 = normalne)")
+    p.add_argument("--device", default="auto", choices=["auto", "cpu", "mps", "cuda"],
+                   help="XTTS: urzadzenie (auto wykrywa; mps = GPU Apple Silicon)")
     p.add_argument("--length-scale", type=float, default=1.05,
                    help="Piper: tempo mowy; >1 wolniej/dostojniej (domyslnie 1.05)")
     p.add_argument("--max-chars", type=int, default=600,
@@ -126,6 +128,7 @@ def main(argv: list[str] | None = None) -> int:
             length_scale=args.length_scale,
             language=args.language,
             speed=args.speed,
+            device=None if args.device == "auto" else args.device,
         )
         opts = SynthOptions(
             max_chars=args.max_chars,

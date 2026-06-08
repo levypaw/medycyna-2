@@ -40,10 +40,23 @@ plik  ->  ekstrakcja tekstu  ->  czyszczenie  ->  podzial na fragmenty
 
 ## Instalacja
 
+**macOS (Apple Silicon M1/M2/M3/M4)** — jedno polecenie instaluje wszystko
+(Python 3.11, ffmpeg, Tesseract, pakiet z XTTS i OCR):
+
+```bash
+bash setup_mac.sh
+```
+
+Recznie / inne systemy:
+
 ```bash
 pip install -e .            # pakiet + zaleznosci ekstrakcji
 pip install -e ".[elevenlabs]"   # dodatkowo backend chmurowy
+pip install -e ".[xtts]"         # klonowanie barwy (XTTS)
 ```
+
+Na Apple Silicon mozna probowac akceleracji GPU: `--device mps`
+(gdy zglosi blad — `--device cpu`).
 
 Narzedzia zewnetrzne (wg potrzeb):
 
