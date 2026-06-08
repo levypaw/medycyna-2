@@ -16,10 +16,20 @@ dependencies = [
 
 [project.optional-dependencies]
 elevenlabs = ["requests>=2.31"]
-# Spojna para: coqui-tts 0.25.x dziala z transformers <=4.46.2 (ma
-# isin_mps_friendly). Nowsze coqui-tts (0.27.x) wymagaja transformers>=4.57,
-# ktore te funkcje usunely -> import XTTS sie wywala. Przypiete celowo.
-xtts = ["coqui-tts>=0.25.1,<0.26", "transformers>=4.43,<=4.46.2"]
+# Spojny zestaw dla XTTS (przypiety celowo):
+#  * coqui-tts 0.25.x dziala z transformers <=4.46.2 (ma isin_mps_friendly);
+#    nowsze coqui-tts (0.27.x) wymagaja transformers>=4.57, ktore te funkcje
+#    usunely -> import XTTS sie wywala.
+#  * torch/torchaudio < 2.5: nowszy torchaudio (>=2.9) wymaga osobnego pakietu
+#    `torchcodec` do wczytania audio, czego coqui-tts 0.25 nie zaklada.
+#  * soundfile: dekoder WAV uzywany przez torchaudio.load.
+xtts = [
+    "coqui-tts>=0.25.1,<0.26",
+    "transformers>=4.43,<=4.46.2",
+    "torch>=2.1,<2.5",
+    "torchaudio>=2.1,<2.5",
+    "soundfile>=0.12",
+]
 ocr = ["pytesseract>=0.3.10", "pillow>=10.0"]
 dev = ["pytest>=8.0"]
 

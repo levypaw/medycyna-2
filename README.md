@@ -124,6 +124,14 @@ Najwazniejsze flagi: `--backend`, `--voice`, `--language`, `--speed`,
 pip install "coqui-tts==0.25.1" "transformers==4.46.2"
 ```
 
+`ModuleNotFoundError: No module named 'torchcodec'` / `TorchCodec is required` —
+masz zbyt nowy `torchaudio` (>=2.9 wymaga osobnego `torchcodec`). Cofnij torcha
+do sprawdzonego, spojnego zestawu:
+
+```bash
+pip install "torch==2.4.1" "torchaudio==2.4.1" soundfile
+```
+
 ## Uwaga prawna — glos konkretnego lektora
 
 Narzedzie *potrafi* klonowac barwe (backendy `xtts` i `elevenlabs`), ale glos

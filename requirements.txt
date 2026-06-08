@@ -8,8 +8,11 @@ pytesseract>=0.3.10  # most do binarki Tesseract
 pillow>=10.0         # renderowane strony jako obrazy
 
 # Lokalne klonowanie barwy (opcjonalnie) — wymaga tez PyTorch, najlepiej GPU
-coqui-tts>=0.25.1,<0.26       # XTTS-v2 (spojna para z transformers ponizej)
+coqui-tts>=0.25.1,<0.26       # XTTS-v2 (spojny zestaw ponizej)
 transformers>=4.43,<=4.46.2   # ma isin_mps_friendly wymagany przez coqui-tts
+torch>=2.1,<2.5               # <2.5: torchaudio.load bez torchcodec
+torchaudio>=2.1,<2.5
+soundfile>=0.12               # dekoder WAV dla torchaudio.load
 
 # Backend chmurowy (opcjonalnie)
 requests>=2.31       # ElevenLabs API
