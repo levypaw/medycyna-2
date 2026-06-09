@@ -4,11 +4,40 @@ from pdf_audiobook.normalize import (
     expand_abbreviations,
     expand_numbers,
     expand_roman,
+    expand_years,
     int_to_cardinal,
     normalize_text,
+    ordinal_genitive,
     ordinal_pl,
     roman_to_int,
+    year_to_words,
 )
+
+
+# --- lata (forma porzadkowa, dopelniacz) ---------------------------------- #
+def test_year_to_words():
+    assert year_to_words(1939) == "tysiąc dziewięćset trzydziestego dziewiątego"
+    assert year_to_words(1930) == "tysiąc dziewięćset trzydziestego"
+    assert year_to_words(2024) == "dwa tysiące dwudziestego czwartego"
+
+
+def test_ordinal_genitive():
+    assert ordinal_genitive(1) == "pierwszego"
+    assert ordinal_genitive(30) == "trzydziestego"
+    assert ordinal_genitive(39) == "trzydziestego dziewiątego"
+
+
+def test_expand_years_always_roku_genitive():
+    assert expand_years("w 1930 rok") == "w tysiąc dziewięćset trzydziestego roku"
+    assert expand_years("w 1930 roku") == "w tysiąc dziewięćset trzydziestego roku"
+    assert expand_years("w 1930 r.") == "w tysiąc dziewięćset trzydziestego roku"
+
+
+def test_abbreviations_keep_polish_diacritics():
+    assert expand_abbreviations("ok.") == "około"
+    assert expand_abbreviations("np.") == "na przykład"
+    assert expand_abbreviations("m.in.") == "między innymi"
+    assert expand_abbreviations("wg") == "według"
 
 
 # --- liczby glowne -------------------------------------------------------- #
@@ -43,14 +72,14 @@ def test_expand_numbers_in_text():
 
 # --- skroty --------------------------------------------------------------- #
 def test_abbreviations_common():
-    assert expand_abbreviations("np. kot") == "na przyklad kot"
+    assert expand_abbreviations("np. kot") == "na przykład kot"
     assert expand_abbreviations("itd.") == "i tak dalej"
-    assert expand_abbreviations("m.in. to") == "miedzy innymi to"
+    assert expand_abbreviations("m.in. to") == "między innymi to"
     assert expand_abbreviations("dr Nowak") == "doktor Nowak"
 
 
 def test_abbreviation_case_insensitive_at_sentence_start():
-    assert expand_abbreviations("Np. tak") == "na przyklad tak"
+    assert expand_abbreviations("Np. tak") == "na przykład tak"
 
 
 def test_abbreviation_does_not_touch_inside_word():
@@ -82,5 +111,5 @@ def test_roman_only_in_context():
 def test_normalize_text_pipeline():
     out = normalize_text("W XIX w. żyło tu np. 1500 osób.")
     assert "dziewiętnasty wiek" in out
-    assert "na przyklad" in out
+    assert "na przykład" in out
     assert "tysiąc pięćset" in out

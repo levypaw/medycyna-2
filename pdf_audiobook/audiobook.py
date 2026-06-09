@@ -26,6 +26,7 @@ class SynthOptions:
     max_chars: int = 600
     keep_chunks: bool = False
     normalize: bool = True
+    pitch: float = 0.0  # przesuniecie wysokosci w poltonach (ujemne = nizej)
 
 
 @dataclass
@@ -39,6 +40,34 @@ class BookMeta:
 
 def _have_ffmpeg() -> bool:
     return shutil.which("ffmpeg") is not None
+
+
+def _pitch_shift(path: Path, semitones: float) -> None:
+    """Przesuwa wysokosc dzwieku o `semitones` poltonow, zachowujac tempo.
+
+    Ujemna wartosc = nizszy (glebszy) glos. Wymaga ffmpeg. Trick: asetrate
+    zmienia wysokosc i tempo o ten sam wspolczynnik, a atempo przywraca tempo.
+    """
+    if not _have_ffmpeg():
+        raise RuntimeError(
+            "Zmiana wysokosci glosu (--pitch) wymaga ffmpeg. Zainstaluj ffmpeg."
+        )
+    with wave.open(str(path), "rb") as w:
+        sr = w.getframerate()
+
+    k = 2.0 ** (semitones / 12.0)
+    target_sr = max(1, int(round(sr * k)))
+    af = f"asetrate={target_sr},aresample={sr},atempo={1.0 / k:.6f}"
+
+    tmp = path.with_suffix(".pitch.wav")
+    proc = subprocess.run(
+        ["ffmpeg", "-y", "-i", str(path), "-af", af, str(tmp)],
+        capture_output=True, text=True,
+    )
+    if proc.returncode != 0 or not tmp.exists():
+        tmp.unlink(missing_ok=True)
+        raise RuntimeError(f"ffmpeg pitch-shift nie powiodl sie:\n{proc.stderr[-1000:]}")
+    tmp.replace(path)
 
 
 def _have_ffprobe() -> bool:
@@ -94,6 +123,8 @@ def synthesize_book(
 
         chapter_file = out_dir / f"ch{idx:03d}.{backend.audio_ext}"
         _concat_audio(piece_paths, chapter_file)
+        if opts.pitch:
+            _pitch_shift(chapter_file, opts.pitch)
         chapters_out.append((chapter_file, chapter.title))
 
     if not opts.keep_chunks:

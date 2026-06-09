@@ -21,27 +21,27 @@ import re
 # Klucz dokladnie tak, jak w tekscie (z kropka, jesli wystepuje). Dopasowanie
 # jest niewrazliwe na wielkosc liter, z poszanowaniem granic wyrazow.
 ABBREVIATIONS: dict[str, str] = {
-    "np.": "na przyklad",
+    "np.": "na przykład",
     "itd.": "i tak dalej",
     "itp.": "i tym podobne",
     "tj.": "to jest",
     "tzn.": "to znaczy",
     "tzw.": "tak zwany",
-    "m.in.": "miedzy innymi",
+    "m.in.": "między innymi",
     "in.": "innymi",
-    "ok.": "okolo",
-    "cd.": "ciag dalszy",
-    "jw.": "jak wyzej",
-    "ww.": "wyzej wymieniony",
-    "pt.": "pod tytulem",
+    "ok.": "około",
+    "cd.": "ciąg dalszy",
+    "jw.": "jak wyżej",
+    "ww.": "wyżej wymieniony",
+    "pt.": "pod tytułem",
     "ds.": "do spraw",
-    "wg": "wedlug",
+    "wg": "według",
     "godz.": "godzina",
     "nr": "numer",
     "ul.": "ulica",
     "al.": "aleja",
     "pl.": "plac",
-    "sw.": "swiety",
+    "sw.": "święty",
     "św.": "święty",
     "prof.": "profesor",
     "dr": "doktor",
@@ -54,7 +54,7 @@ ABBREVIATIONS: dict[str, str] = {
     "str.": "strona",
     "rys.": "rysunek",
     "tab.": "tabela",
-    "r.": "roku",
+    "r.": "roku",   # zwykle po roku obsluzone w expand_years; tu fallback
     "w.": "wiek",
 }
 
@@ -229,6 +229,56 @@ def ordinal_pl(n: int) -> str:
     return int_to_cardinal(n)  # poza zakresem — bezpieczny fallback
 
 
+# Liczebniki porzadkowe w dopelniaczu (np. "trzydziestego dziewiatego roku").
+_ORD_GEN_UNITS = {1: "pierwszego", 2: "drugiego", 3: "trzeciego", 4: "czwartego",
+                  5: "piątego", 6: "szóstego", 7: "siódmego", 8: "ósmego",
+                  9: "dziewiątego"}
+_ORD_GEN_TEENS = {10: "dziesiątego", 11: "jedenastego", 12: "dwunastego",
+                  13: "trzynastego", 14: "czternastego", 15: "piętnastego",
+                  16: "szesnastego", 17: "siedemnastego", 18: "osiemnastego",
+                  19: "dziewiętnastego"}
+_ORD_GEN_TENS = {20: "dwudziestego", 30: "trzydziestego", 40: "czterdziestego",
+                 50: "pięćdziesiątego", 60: "sześćdziesiątego",
+                 70: "siedemdziesiątego", 80: "osiemdziesiątego",
+                 90: "dziewięćdziesiątego"}
+
+
+def ordinal_genitive(n: int) -> str:
+    """Liczebnik porzadkowy w dopelniaczu (rodzaj meski) dla 1..99."""
+    if n in _ORD_GEN_UNITS:
+        return _ORD_GEN_UNITS[n]
+    if 10 <= n <= 19:
+        return _ORD_GEN_TEENS[n]
+    if n in _ORD_GEN_TENS:
+        return _ORD_GEN_TENS[n]
+    if 20 <= n <= 99:
+        t, u = (n // 10) * 10, n % 10
+        return _ORD_GEN_TENS[t] + (" " + _ORD_GEN_UNITS[u] if u else "")
+    return int_to_cardinal(n)
+
+
+def year_to_words(year: int) -> str:
+    """Rok jako fraza dopelniacza, np. 1939 -> 'tysiac dziewiecset trzydziestego
+    dziewiatego' (bez slowa 'roku' — dodaje je expand_years)."""
+    rem = year % 100
+    if rem == 0:
+        # Okragle setki/tysiace — bezpieczny fallback (rzadkie w tekstach).
+        return int_to_cardinal(year)
+    prefix = int_to_cardinal(year - rem)  # np. "tysiąc dziewięćset", "dwa tysiące"
+    return f"{prefix} {ordinal_genitive(rem)}"
+
+
+# Rok poprzedzony liczba (3-4 cyfry) i zakonczony r./rok/roku -> dopelniacz + "roku".
+_YEAR_RE = re.compile(
+    r"\b(\d{3,4})\s+(?:roku|rok|r\.)(?![\wąćęłńóśźżĄĆĘŁŃÓŚŹŻ])",
+    re.IGNORECASE,
+)
+
+
+def expand_years(text: str) -> str:
+    return _YEAR_RE.sub(lambda m: f"{year_to_words(int(m.group(1)))} roku", text)
+
+
 _CTX_BEFORE = r"rozdział|rozdziale|tom|tomie|część|części|księga|księdze|akt|akcie|punkt|punkcie"
 _CTX_AFTER = r"wiek|wieku|wieków|stulecie|stuleciu"
 _ROMAN_TOKEN = r"[IVXLCDM]{1,5}"
@@ -260,8 +310,9 @@ def expand_roman(text: str) -> str:
 # Calosc
 # --------------------------------------------------------------------------- #
 def normalize_text(text: str) -> str:
-    """Pelna normalizacja: skroty -> liczby rzymskie -> liczby arabskie."""
+    """Pelna normalizacja: lata -> skroty -> liczby rzymskie -> liczby arabskie."""
+    text = expand_years(text)        # przed skrotami, by zlapac tez "1939 r."
     text = expand_abbreviations(text)
-    text = expand_roman(text)   # przed cyframi, by nie psuc kontekstu
+    text = expand_roman(text)        # przed cyframi, by nie psuc kontekstu
     text = expand_numbers(text)
     return text

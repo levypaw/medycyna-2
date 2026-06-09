@@ -112,8 +112,15 @@ python -m pdf_audiobook ksiazka.epub --dry-run
 ```
 
 Najwazniejsze flagi: `--backend`, `--voice`, `--language`, `--speed`,
-`--length-scale`, `--max-chars`, `--ocr`, `--merge`, `--keep-chunks`,
-`--dry-run`. Pelna lista: `--help`.
+`--pitch`, `--length-scale`, `--max-chars`, `--ocr`, `--merge`,
+`--keep-chunks`, `--dry-run`. Pelna lista: `--help`.
+
+Glebszy/nizszy glos: `--pitch -2` (obniza o 2 poltony, wymaga ffmpeg). Np.:
+
+```bash
+python -m pdf_audiobook ksiazka.pdf -o out/ --backend xtts --voice probka.wav \
+    --language pl --pitch -2 --m4b
+```
 
 ### Rozwiazywanie problemow (XTTS)
 

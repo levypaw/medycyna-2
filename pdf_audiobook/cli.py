@@ -51,6 +51,9 @@ def _build_parser() -> argparse.ArgumentParser:
                    help="XTTS: jezyk syntezy (domyslnie pl)")
     p.add_argument("--speed", type=float, default=1.0,
                    help="XTTS: tempo mowy (1.0 = normalne)")
+    p.add_argument("--pitch", type=float, default=0.0,
+                   help="Przesuniecie wysokosci glosu w poltonach (ujemne = glebszy, "
+                        "np. -2). Wymaga ffmpeg")
     p.add_argument("--device", default="auto", choices=["auto", "cpu", "mps", "cuda"],
                    help="XTTS: urzadzenie (auto wykrywa; mps = GPU Apple Silicon)")
     p.add_argument("--length-scale", type=float, default=1.05,
@@ -134,6 +137,7 @@ def main(argv: list[str] | None = None) -> int:
             max_chars=args.max_chars,
             keep_chunks=args.keep_chunks,
             normalize=args.normalize,
+            pitch=args.pitch,
         )
         chapters_out = synthesize_book(
             book, backend, args.out_dir, opts, progress=_progress
