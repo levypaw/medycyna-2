@@ -54,6 +54,9 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--pitch", type=float, default=0.0,
                    help="Przesuniecie wysokosci glosu w poltonach (ujemne = glebszy, "
                         "np. -2). Wymaga ffmpeg")
+    p.add_argument("--temperature", type=float, default=0.65,
+                   help="XTTS: nizsza = stabilniej/mniej bledow, wyzsza = wiecej "
+                        "ekspresji (domyslnie 0.65; sprobuj 0.5)")
     p.add_argument("--device", default="auto", choices=["auto", "cpu", "mps", "cuda"],
                    help="XTTS: urzadzenie (auto wykrywa; mps = GPU Apple Silicon)")
     p.add_argument("--length-scale", type=float, default=1.05,
@@ -131,6 +134,7 @@ def main(argv: list[str] | None = None) -> int:
             length_scale=args.length_scale,
             language=args.language,
             speed=args.speed,
+            temperature=args.temperature,
             device=None if args.device == "auto" else args.device,
         )
         opts = SynthOptions(

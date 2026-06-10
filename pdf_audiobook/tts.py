@@ -246,12 +246,14 @@ class XTTSBackend(TTSBackend):
         model_name: str | None = None,
         device: str | None = None,
         speed: float = 1.0,
+        temperature: float = 0.65,
     ) -> None:
         self.speaker_wav = Path(speaker_wav)
         self.language = language
         self.model_name = model_name or self.DEFAULT_MODEL
         self.device = device
         self.speed = speed
+        self.temperature = temperature
         self._tts = None  # leniwie ladowany model (ciezki)
 
     def preflight(self) -> None:
@@ -292,22 +294,19 @@ class XTTSBackend(TTSBackend):
 
     def synthesize(self, text: str, out_path: Path) -> None:
         self._load()
+        common = dict(
+            text=text,
+            speaker_wav=str(self.speaker_wav),
+            language=self.language,
+            file_path=str(out_path),
+        )
         try:
             self._tts.tts_to_file(
-                text=text,
-                speaker_wav=str(self.speaker_wav),
-                language=self.language,
-                speed=self.speed,
-                file_path=str(out_path),
+                **common, speed=self.speed, temperature=self.temperature
             )
         except TypeError:
-            # Starsze wersje API bez parametru `speed`.
-            self._tts.tts_to_file(
-                text=text,
-                speaker_wav=str(self.speaker_wav),
-                language=self.language,
-                file_path=str(out_path),
-            )
+            # Starsze wersje API bez parametrow speed/temperature.
+            self._tts.tts_to_file(**common)
         if not out_path.exists():
             raise TTSError("XTTS nie wygenerowal pliku audio.")
 
@@ -339,6 +338,7 @@ def build_backend(name: str, **kwargs) -> TTSBackend:
             speaker_wav=kwargs["voice"],
             language=kwargs.get("language", "pl"),
             speed=kwargs.get("speed", 1.0),
+            temperature=kwargs.get("temperature", 0.65),
             device=kwargs.get("device"),
         )
     raise TTSError(

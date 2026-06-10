@@ -45,6 +45,17 @@ def test_chunk_keeps_oversized_sentence_whole():
     assert any(len(c) > 50 for c in chunks)
 
 
+def test_heading_becomes_separate_paragraph():
+    raw = "Rozdział I. Przybycie\nDziało się to w osadzie. Spokojny dzień."
+    out = clean_text(raw)
+    # Naglowek konczy sie kropka i jest oddzielony od tresci pusta linia.
+    assert "Przybycie." in out
+    assert "\n\n" in out
+    chunks = chunk_text(out, 600)
+    assert chunks[0].startswith("Rozdział I. Przybycie")
+    assert "Działo" not in chunks[0]
+
+
 def test_chunk_breaks_on_paragraphs():
     text = "Akapit jeden.\n\nAkapit dwa."
     chunks = chunk_text(text, max_chars=1000)

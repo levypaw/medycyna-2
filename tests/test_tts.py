@@ -27,10 +27,12 @@ def test_build_backend_piper():
 
 
 def test_build_backend_xtts():
-    b = build_backend("xtts", voice="ref.wav", language="pl", speed=1.1)
+    b = build_backend("xtts", voice="ref.wav", language="pl", speed=1.1,
+                      temperature=0.5)
     assert isinstance(b, XTTSBackend)
     assert b.language == "pl"
     assert b.speed == 1.1
+    assert b.temperature == 0.5
     assert b.audio_ext == "wav"
 
 

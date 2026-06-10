@@ -115,6 +115,9 @@ Najwazniejsze flagi: `--backend`, `--voice`, `--language`, `--speed`,
 `--pitch`, `--length-scale`, `--max-chars`, `--ocr`, `--merge`,
 `--keep-chunks`, `--dry-run`. Pelna lista: `--help`.
 
+Mniej bledow XTTS: `--temperature 0.5` (nizsza = stabilniej). Naglowki
+rozdzialow sa automatycznie czytane z pauza (osobny akapit).
+
 Glebszy/nizszy glos: `--pitch -2` (obniza o 2 poltony, wymaga ffmpeg). Np.:
 
 ```bash
