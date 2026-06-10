@@ -81,6 +81,9 @@ def _build_parser() -> argparse.ArgumentParser:
                    help="Wylacz normalizacje tekstu PL (skroty, liczby, l. rzymskie)")
     p.add_argument("--keep-chunks", action="store_true",
                    help="Nie usuwaj posrednich plikow fragmentow")
+    p.add_argument("--resume", action="store_true",
+                   help="Wznow: pomijaj fragmenty juz zsyntetyzowane w tym katalogu "
+                        "(dla dlugich ksiazek — przezyje przerwanie)")
     p.add_argument("--dry-run", action="store_true",
                    help="Tylko wyciagnij i wyczysc tekst, bez syntezy")
     p.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
@@ -142,6 +145,7 @@ def main(argv: list[str] | None = None) -> int:
             keep_chunks=args.keep_chunks,
             normalize=args.normalize,
             pitch=args.pitch,
+            resume=args.resume,
         )
         chapters_out = synthesize_book(
             book, backend, args.out_dir, opts, progress=_progress

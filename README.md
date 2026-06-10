@@ -118,6 +118,10 @@ Najwazniejsze flagi: `--backend`, `--voice`, `--language`, `--speed`,
 Mniej bledow XTTS: `--temperature 0.5` (nizsza = stabilniej). Naglowki
 rozdzialow sa automatycznie czytane z pauza (osobny akapit).
 
+Dlugie ksiazki: `--resume` pomija fragmenty juz zsyntetyzowane, wiec po
+przerwaniu (Ctrl+C, awaria, restart) wystarczy uruchomic te sama komende
+ponownie — praca rusza od miejsca, w ktorym stanela.
+
 Glebszy/nizszy glos: `--pitch -2` (obniza o 2 poltony, wymaga ffmpeg). Np.:
 
 ```bash

@@ -26,7 +26,8 @@ class SynthOptions:
     max_chars: int = 600
     keep_chunks: bool = False
     normalize: bool = True
-    pitch: float = 0.0  # przesuniecie wysokosci w poltonach (ujemne = nizej)
+    pitch: float = 0.0   # przesuniecie wysokosci w poltonach (ujemne = nizej)
+    resume: bool = False  # pomijaj fragmenty juz zsyntetyzowane (dlugie ksiazki)
 
 
 @dataclass
@@ -115,7 +116,18 @@ def synthesize_book(
         piece_paths: list[Path] = []
         for j, piece in enumerate(chunks):
             piece_path = chunks_dir / f"ch{idx:03d}_{j:04d}.{backend.audio_ext}"
-            backend.synthesize(piece, piece_path)
+            if opts.resume and piece_path.exists() and piece_path.stat().st_size > 0:
+                # Fragment juz zrobiony w poprzednim przebiegu — pomin.
+                piece_paths.append(piece_path)
+                done += 1
+                if progress:
+                    progress(done, total, chapter.title)
+                continue
+            # Zapis atomowy: najpierw plik tymczasowy, potem zamiana — dzieki
+            # czemu --resume nigdy nie zostawia uciętego/uszkodzonego fragmentu.
+            tmp_path = piece_path.with_suffix(f".tmp.{backend.audio_ext}")
+            backend.synthesize(piece, tmp_path)
+            tmp_path.replace(piece_path)
             piece_paths.append(piece_path)
             done += 1
             if progress:

@@ -1,6 +1,49 @@
 """Testy logiki skladania audiobooka, ktore nie wymagaja ffmpeg."""
 
-from pdf_audiobook.audiobook import BookMeta, _ffmetadata
+import wave
+
+from pdf_audiobook.audiobook import (
+    BookMeta,
+    SynthOptions,
+    _ffmetadata,
+    synthesize_book,
+)
+from pdf_audiobook.extract import Book, Chapter
+from pdf_audiobook.tts import TTSBackend
+
+
+class _CountingBackend(TTSBackend):
+    """Atrapa TTS: zapisuje krotki, poprawny WAV i liczy wywolania."""
+
+    audio_ext = "wav"
+
+    def __init__(self):
+        self.calls = 0
+
+    def synthesize(self, text, out_path):
+        self.calls += 1
+        with wave.open(str(out_path), "wb") as w:
+            w.setnchannels(1)
+            w.setsampwidth(2)
+            w.setframerate(22050)
+            w.writeframes(b"\x00\x00" * 100)
+
+
+def test_resume_skips_done_chunks(tmp_path):
+    book = Book(title="T", chapters=[
+        Chapter(title="R1", text="Zdanie jedno. Zdanie dwa. Zdanie trzy.", index=0),
+    ])
+    backend = _CountingBackend()
+    # keep_chunks=True symuluje fragmenty zachowane z poprzedniego przebiegu.
+    opts = SynthOptions(max_chars=20, resume=True, keep_chunks=True)
+
+    synthesize_book(book, backend, tmp_path, opts)
+    first = backend.calls
+    assert first > 0
+
+    # Drugi przebieg z --resume: fragmenty istnieja, brak nowych syntez.
+    synthesize_book(book, backend, tmp_path, opts)
+    assert backend.calls == first
 
 
 def test_ffmetadata_has_header_and_global_tags():
