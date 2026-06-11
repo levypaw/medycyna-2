@@ -166,7 +166,8 @@ pytest -q
 
 ## Plany / mozliwe rozszerzenia
 
-- Pelna **deklinacja** liczebnikow i porzadkowych wg przypadka (teraz forma
-  mianownikowa, np. "rozdziale trzeci" zamiast "trzecim") — zrozumiale dla
-  lektora, ale gramatycznie uproszczone.
+- Pelniejsza **deklinacja** liczebnikow. Obslugiwane sa juz liczby po przyimkach
+  rzadzacych dopelniaczem/miejscownikiem (np. "po 142 stopniach" -> "po stu
+  czterdziestu dwoch stopniach"), ale przypadki narzucane przez czasowniki oraz
+  liczby >999 w przypadku zaleznym pozostaja w mianowniku.
 - Rownolegla synteza fragmentow i wznawianie przerwanej pracy.

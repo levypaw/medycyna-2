@@ -173,6 +173,69 @@ def expand_numbers(text: str) -> str:
 
 
 # --------------------------------------------------------------------------- #
+# Liczebniki w przypadku zaleznym (dopelniacz = miejscownik) po przyimkach.
+# np. "po 142 stopniach" -> "po stu czterdziestu dwoch stopniach".
+# --------------------------------------------------------------------------- #
+# 1 w zlozeniach pozostaje nieodmienione ("dwudziestu jeden"); standalone -> jeden.
+_OBL_UNITS = {2: "dwóch", 3: "trzech", 4: "czterech", 5: "pięciu", 6: "sześciu",
+              7: "siedmiu", 8: "ośmiu", 9: "dziewięciu"}
+_OBL_TEENS = {10: "dziesięciu", 11: "jedenastu", 12: "dwunastu", 13: "trzynastu",
+              14: "czternastu", 15: "piętnastu", 16: "szesnastu", 17: "siedemnastu",
+              18: "osiemnastu", 19: "dziewiętnastu"}
+_OBL_TENS = {20: "dwudziestu", 30: "trzydziestu", 40: "czterdziestu",
+             50: "pięćdziesięciu", 60: "sześćdziesięciu", 70: "siedemdziesięciu",
+             80: "osiemdziesięciu", 90: "dziewięćdziesięciu"}
+_OBL_HUNDREDS = {100: "stu", 200: "dwustu", 300: "trzystu", 400: "czterystu",
+                 500: "pięciuset", 600: "sześciuset", 700: "siedmiuset",
+                 800: "ośmiuset", 900: "dziewięciuset"}
+
+
+def int_to_oblique(n: int) -> str:
+    """Liczebnik glowny w dopelniaczu/miejscowniku dla 2..999.
+
+    Dla 1 oraz liczb >999 nie ma pewnej, prostej formy — zwraca mianownik
+    (bezpieczny fallback), bo lepiej zostawic zrozumiale niz wstawic blad.
+    """
+    if n < 2 or n > 999:
+        return int_to_cardinal(n)
+    parts: list[str] = []
+    h = (n // 100) * 100
+    rem = n % 100
+    if h:
+        parts.append(_OBL_HUNDREDS[h])
+    if rem:
+        if rem < 10:
+            parts.append("jeden" if rem == 1 else _OBL_UNITS[rem])
+        elif rem < 20:
+            parts.append(_OBL_TEENS[rem])
+        else:
+            t, u = (rem // 10) * 10, rem % 10
+            parts.append(_OBL_TENS[t])
+            if u:
+                parts.append("jeden" if u == 1 else _OBL_UNITS[u])
+    return " ".join(parts)
+
+
+# Przyimki, ktore jednoznacznie lacza sie z dopelniaczem/miejscownikiem
+# (forma liczebnika w obu przypadkach jest taka sama).
+_PREP_OBLIQUE = (
+    r"po|od|do|bez|dla|u|około|koło|według|obok|wśród|podczas|przy|"
+    r"sprzed|znad|spod|naprzeciw|wobec|wzdłuż"
+)
+_PREP_NUM_RE = re.compile(
+    rf"\b(?P<prep>{_PREP_OBLIQUE})\s+(?P<num>\d+)\b", re.IGNORECASE
+)
+
+
+def expand_oblique_after_prep(text: str) -> str:
+    """Odmienia liczbe po przyimku rzadzacym dopelniaczem/miejscownikiem."""
+    def repl(m: re.Match[str]) -> str:
+        return f"{m.group('prep')} {int_to_oblique(int(m.group('num')))}"
+
+    return _PREP_NUM_RE.sub(repl, text)
+
+
+# --------------------------------------------------------------------------- #
 # Liczby rzymskie -> liczebniki porzadkowe (tylko w kontekscie)
 # --------------------------------------------------------------------------- #
 _ORD_UNITS = {1: "pierwszy", 2: "drugi", 3: "trzeci", 4: "czwarty", 5: "piąty",
@@ -310,9 +373,11 @@ def expand_roman(text: str) -> str:
 # Calosc
 # --------------------------------------------------------------------------- #
 def normalize_text(text: str) -> str:
-    """Pelna normalizacja: lata -> skroty -> liczby rzymskie -> liczby arabskie."""
+    """Pelna normalizacja: lata -> skroty -> liczby rzymskie -> liczby (zalezne,
+    a potem mianownik)."""
     text = expand_years(text)        # przed skrotami, by zlapac tez "1939 r."
-    text = expand_abbreviations(text)
+    text = expand_abbreviations(text)  # m.in. "ok."->"około", "wg"->"według"
     text = expand_roman(text)        # przed cyframi, by nie psuc kontekstu
-    text = expand_numbers(text)
+    text = expand_oblique_after_prep(text)  # "po 142 ..." -> "po stu czterdziestu dwóch ..."
+    text = expand_numbers(text)      # pozostale liczby w mianowniku
     return text

@@ -3,15 +3,37 @@
 from pdf_audiobook.normalize import (
     expand_abbreviations,
     expand_numbers,
+    expand_oblique_after_prep,
     expand_roman,
     expand_years,
     int_to_cardinal,
+    int_to_oblique,
     normalize_text,
     ordinal_genitive,
     ordinal_pl,
     roman_to_int,
     year_to_words,
 )
+
+
+# --- liczebniki w przypadku zaleznym (po przyimkach) ---------------------- #
+def test_int_to_oblique():
+    assert int_to_oblique(142) == "stu czterdziestu dwóch"
+    assert int_to_oblique(5) == "pięciu"
+    assert int_to_oblique(200) == "dwustu"
+    assert int_to_oblique(21) == "dwudziestu jeden"
+
+
+def test_oblique_after_preposition():
+    assert expand_oblique_after_prep("po 142 stopniach") == \
+        "po stu czterdziestu dwóch stopniach"
+    assert expand_oblique_after_prep("od 200 do 300") == "od dwustu do trzystu"
+    assert expand_oblique_after_prep("bez 5 minut") == "bez pięciu minut"
+
+
+def test_oblique_only_after_listed_prepositions():
+    # "na" rzadzi biernikiem — nie zmieniamy (zostaje do mianownika).
+    assert expand_oblique_after_prep("na 5 stron") == "na 5 stron"
 
 
 # --- lata (forma porzadkowa, dopelniacz) ---------------------------------- #
