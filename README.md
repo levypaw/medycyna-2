@@ -26,7 +26,9 @@ plik  ->  ekstrakcja tekstu  ->  czyszczenie  ->  podzial na fragmenty
   (`1939`→tysiac dziewiecset trzydziesci dziewiec) i liczby rzymskie w kontekscie
   (`rozdzial III`→trzeci, `XIX wiek`→dziewietnasty). Wylaczane `--no-normalize`.
 - **Podzial na fragmenty** po granicach zdan (heurystyka dla polskiego),
-  z poszanowaniem akapitow.
+  z poszanowaniem akapitow; dlugie zdania dzielone na frazy, by zaden fragment
+  nie przekroczyl limitu silnika (XTTS=224 znaki dla PL). Domyslny rozmiar:
+  200 dla `xtts`, 600 dla pozostalych.
 - **Backendy TTS** (wymienne):
   - `espeak` — **zero konfiguracji**, offline (espeak-ng); glos "robotyczny",
     idealny do szybkiego testu calego potoku,

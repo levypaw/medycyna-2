@@ -39,10 +39,22 @@ def test_chunk_respects_max_chars():
     assert all(len(c) <= 100 for c in chunks)
 
 
-def test_chunk_keeps_oversized_sentence_whole():
-    long_sentence = "Slowo " * 100 + "koniec."
-    chunks = chunk_text(long_sentence.strip(), max_chars=50)
-    assert any(len(c) > 50 for c in chunks)
+def test_long_sentence_split_under_limit():
+    # Zdanie dluzsze niz limit silnika musi zostac podzielone (XTTS=224).
+    long_sentence = (
+        "Szedł przez las, mijał drzewa, krzewy i kamienie, "
+        + "rozglądał się uważnie, " * 20
+        + "aż dotarł do celu."
+    )
+    chunks = chunk_text(long_sentence, max_chars=200)
+    assert len(chunks) > 1
+    assert all(len(c) <= 200 for c in chunks)
+
+
+def test_hard_split_when_no_punctuation():
+    # Brak interpunkcji — dzielenie po slowach, wciaz <= limit.
+    chunks = chunk_text("slowo " * 100, max_chars=50)
+    assert all(len(c) <= 50 for c in chunks)
 
 
 def test_heading_becomes_separate_paragraph():

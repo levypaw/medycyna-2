@@ -61,8 +61,9 @@ def _build_parser() -> argparse.ArgumentParser:
                    help="XTTS: urzadzenie (auto wykrywa; mps = GPU Apple Silicon)")
     p.add_argument("--length-scale", type=float, default=1.05,
                    help="Piper: tempo mowy; >1 wolniej/dostojniej (domyslnie 1.05)")
-    p.add_argument("--max-chars", type=int, default=600,
-                   help="Maks. dlugosc fragmentu wysylanego do TTS (domyslnie 600)")
+    p.add_argument("--max-chars", type=int, default=None,
+                   help="Maks. dlugosc fragmentu wysylanego do TTS (domyslnie: "
+                        "200 dla xtts ze wzgledu na limit 224 znakow, 600 dla reszty)")
     p.add_argument("--ocr", default="auto", choices=["auto", "force", "off"],
                    help="OCR dla PDF: auto=tylko skany, force=wszystkie strony, off "
                         "(domyslnie auto)")
@@ -140,8 +141,12 @@ def main(argv: list[str] | None = None) -> int:
             temperature=args.temperature,
             device=None if args.device == "auto" else args.device,
         )
+        # XTTS ma twardy limit 224 znakow na fragment dla PL -> bezpieczne 200.
+        max_chars = args.max_chars
+        if max_chars is None:
+            max_chars = 200 if args.backend == "xtts" else 600
         opts = SynthOptions(
-            max_chars=args.max_chars,
+            max_chars=max_chars,
             keep_chunks=args.keep_chunks,
             normalize=args.normalize,
             pitch=args.pitch,
