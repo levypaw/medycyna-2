@@ -46,8 +46,10 @@ def _build_parser() -> argparse.ArgumentParser:
                    choices=["espeak", "piper", "xtts", "elevenlabs"],
                    help="Silnik TTS (domyslnie: piper; espeak = test bez konfiguracji)")
     p.add_argument("--voice",
-                   help="Glos wg backendu: sciezka .onnx (piper), plik referencyjny "
-                        ".wav (xtts) lub voice_id (elevenlabs). Niewymagany dla espeak")
+                   help="Glos wg backendu: sciezka .onnx (piper) lub voice_id "
+                        "(elevenlabs). Dla xtts: plik .wav, kilka plikow po "
+                        "przecinku, albo katalog z *.wav (wiele probek = "
+                        "wierniejszy klon). Niewymagany dla espeak")
     p.add_argument("--language", default="pl",
                    help="XTTS: jezyk syntezy (domyslnie pl)")
     p.add_argument("--speed", type=float, default=1.0,

@@ -34,6 +34,12 @@ def test_build_backend_xtts():
     assert b.speed == 1.1
     assert b.temperature == 0.5
     assert b.audio_ext == "wav"
+    assert len(b.speaker_wavs) == 1
+
+
+def test_build_backend_xtts_multi_reference():
+    b = build_backend("xtts", voice="a.wav, b.wav , c.wav")
+    assert [p.name for p in b.speaker_wavs] == ["a.wav", "b.wav", "c.wav"]
 
 
 def test_build_backend_elevenlabs():

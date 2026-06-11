@@ -240,7 +240,7 @@ class XTTSBackend(TTSBackend):
 
     def __init__(
         self,
-        speaker_wav: str | Path,
+        speaker_wav: str | Path | list,
         *,
         language: str = "pl",
         model_name: str | None = None,
@@ -248,7 +248,7 @@ class XTTSBackend(TTSBackend):
         speed: float = 1.0,
         temperature: float = 0.65,
     ) -> None:
-        self.speaker_wav = Path(speaker_wav)
+        self.speaker_wavs = self._resolve_refs(speaker_wav)
         self.language = language
         self.model_name = model_name or self.DEFAULT_MODEL
         self.device = device
@@ -256,11 +256,30 @@ class XTTSBackend(TTSBackend):
         self.temperature = temperature
         self._tts = None  # leniwie ladowany model (ciezki)
 
+    @staticmethod
+    def _resolve_refs(spec) -> list[Path]:
+        """Zamienia --voice na liste plikow referencyjnych.
+
+        Akceptuje: pojedynczy plik, liste plikow po przecinku, lub katalog
+        (wszystkie *.wav w srodku). Wiele klipow -> wierniejszy, stabilniejszy klon.
+        """
+        if isinstance(spec, (list, tuple)):
+            return [Path(p) for p in spec]
+        s = str(spec)
+        if "," in s:
+            return [Path(p.strip()) for p in s.split(",") if p.strip()]
+        if Path(s).is_dir():
+            return sorted(Path(s).glob("*.wav"))
+        return [Path(s)]
+
     def preflight(self) -> None:
-        if not self.speaker_wav.exists():
+        if not self.speaker_wavs:
+            raise TTSError("Nie podano pliku referencyjnego barwy (--voice).")
+        missing = [str(p) for p in self.speaker_wavs if not p.exists()]
+        if missing:
             raise TTSError(
-                f"Brak pliku referencyjnego barwy: {self.speaker_wav}. "
-                "Podaj nagranie glosu (kilka-kilkanascie sekund czystej mowy)."
+                "Brak plikow referencyjnych barwy: " + ", ".join(missing) +
+                ". Podaj nagranie(a) glosu (kilka-kilkanascie sekund czystej mowy)."
             )
         try:
             from TTS.api import TTS  # noqa: F401  (pakiet: coqui-tts)
@@ -294,9 +313,10 @@ class XTTSBackend(TTSBackend):
 
     def synthesize(self, text: str, out_path: Path) -> None:
         self._load()
+        refs = [str(p) for p in self.speaker_wavs]
         common = dict(
             text=text,
-            speaker_wav=str(self.speaker_wav),
+            speaker_wav=refs if len(refs) > 1 else refs[0],
             language=self.language,
             file_path=str(out_path),
         )
