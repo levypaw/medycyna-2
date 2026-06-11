@@ -53,14 +53,23 @@ def _pitch_shift(path: Path, semitones: float) -> None:
         raise RuntimeError(
             "Zmiana wysokosci glosu (--pitch) wymaga ffmpeg. Zainstaluj ffmpeg."
         )
-    with wave.open(str(path), "rb") as w:
-        sr = w.getframerate()
+    # Czestotliwosc probkowania przez ffprobe (dziala dla WAV i MP3).
+    proc = subprocess.run(
+        ["ffprobe", "-v", "error", "-select_streams", "a:0",
+         "-show_entries", "stream=sample_rate",
+         "-of", "default=noprint_wrappers=1:nokey=1", str(path)],
+        capture_output=True, text=True,
+    )
+    try:
+        sr = int(proc.stdout.strip())
+    except ValueError:
+        raise RuntimeError(f"Nie odczytano sample rate dla {path}") from None
 
     k = 2.0 ** (semitones / 12.0)
     target_sr = max(1, int(round(sr * k)))
     af = f"asetrate={target_sr},aresample={sr},atempo={1.0 / k:.6f}"
 
-    tmp = path.with_suffix(".pitch.wav")
+    tmp = path.with_suffix(f".pitch{path.suffix}")
     proc = subprocess.run(
         ["ffmpeg", "-y", "-i", str(path), "-af", af, str(tmp)],
         capture_output=True, text=True,

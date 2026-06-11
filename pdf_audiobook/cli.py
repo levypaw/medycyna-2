@@ -27,6 +27,7 @@ from .audiobook import (
     merge_chapters,
     synthesize_book,
 )
+from .chunk import chunk_text
 from .clean import clean_text
 from .extract import ExtractionError, extract
 from .normalize import normalize_text
@@ -57,6 +58,13 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--temperature", type=float, default=0.65,
                    help="XTTS: nizsza = stabilniej/mniej bledow, wyzsza = wiecej "
                         "ekspresji (domyslnie 0.65; sprobuj 0.5)")
+    p.add_argument("--model-id", default="eleven_multilingual_v2",
+                   help="ElevenLabs: model API (eleven_multilingual_v2 = najlepsza "
+                        "jakosc, 1 kredyt/znak; eleven_flash_v2_5 = tanszy, "
+                        "0.5 kredytu/znak)")
+    p.add_argument("--estimate", action="store_true",
+                   help="Policz znaki/fragmenty i szacunkowy koszt ElevenLabs, "
+                        "bez syntezy")
     p.add_argument("--device", default="auto", choices=["auto", "cpu", "mps", "cuda"],
                    help="XTTS: urzadzenie (auto wykrywa; mps = GPU Apple Silicon)")
     p.add_argument("--length-scale", type=float, default=1.05,
@@ -125,6 +133,29 @@ def main(argv: list[str] | None = None) -> int:
             print(f"\n=== [{ch.index}] {ch.title} ===\n{text[:500]}...")
         return 0
 
+    if args.estimate:
+        max_chars = args.max_chars or (200 if args.backend == "xtts" else 600)
+        total_chars = 0
+        total_chunks = 0
+        for ch in book.chapters:
+            text = clean_text(ch.text)
+            if args.normalize:
+                text = normalize_text(text)
+            chunks = chunk_text(text, max_chars)
+            total_chunks += len(chunks)
+            total_chars += sum(len(c) for c in chunks)
+        print(f"Znakow do syntezy (po normalizacji): {total_chars:,}")
+        print(f"Fragmentow: {total_chunks:,} (max {max_chars} znakow)")
+        print(f"Szacowane audio: ~{total_chars / 54000:.1f} godz. "
+              "(przy ~15 znakach/sek)")
+        print("Szacunek ElevenLabs (kredyty ~= znaki):")
+        print(f"  eleven_flash_v2_5      : ~{total_chars // 2:,} kredytow")
+        print(f"  eleven_multilingual_v2 : ~{total_chars:,} kredytow")
+        print("Plany (orientacyjnie): Creator ~100k kredytow/$22, "
+              "Pro ~500k/$99, Scale ~2M/$330 — zweryfikuj na "
+              "elevenlabs.io/pricing")
+        return 0
+
     if not args.voice and args.backend != "espeak":
         print("Blad: --voice jest wymagany przy syntezie (sciezka .onnx dla piper, "
               "plik referencyjny .wav dla xtts lub voice_id dla elevenlabs).",
@@ -139,6 +170,7 @@ def main(argv: list[str] | None = None) -> int:
             language=args.language,
             speed=args.speed,
             temperature=args.temperature,
+            model_id=args.model_id,
             device=None if args.device == "auto" else args.device,
         )
         # XTTS ma twardy limit 224 znakow na fragment dla PL -> bezpieczne 200.
