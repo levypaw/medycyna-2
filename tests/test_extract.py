@@ -1,6 +1,29 @@
-"""Testy heurystyki front-matter EPUB (bez ebooklib)."""
+"""Testy heurystyki front-matter (EPUB i PDF), bez ebooklib/pymupdf."""
 
-from pdf_audiobook.extract import _is_front_matter
+from pdf_audiobook.extract import (
+    _blank_leading_front_matter,
+    _is_front_matter,
+    _looks_like_front_matter_page,
+)
+
+
+def test_pdf_long_code_page_is_front_matter():
+    assert _looks_like_front_matter_page("78121415585220\nSaga: Odrodzenie")
+    assert not _looks_like_front_matter_page("Las szumiał nad doliną. " * 60)
+
+
+def test_blank_leading_front_matter_keeps_indices_and_content():
+    pages = [
+        "78121415585220 Saga: Odrodzenie",
+        "Tytuł oryginału: X. ISBN 978. Copyright. Wydawnictwo.",
+        "Rozdział I. Las szumiał cicho nad doliną i niczego nie zwiastował.",
+        "Dalsza tresc z liczba 78121415585220 w srodku.",
+    ]
+    out = _blank_leading_front_matter(pages)
+    assert out[0] == "" and out[1] == ""          # strony tytulowe wyczyszczone
+    assert out[2].startswith("Rozdział I.")        # tresc zachowana
+    assert "78121415585220" in out[3]              # kod w srodku NIE czyszczony
+    assert len(out) == len(pages)                  # indeksy stron zachowane
 
 
 def test_front_matter_by_filename():

@@ -168,8 +168,17 @@ def int_to_cardinal(n: int) -> str:
 _NUMBER_RE = re.compile(r"\d+")
 
 
+def _number_repl(m: re.Match[str]) -> str:
+    s = m.group(0)
+    # Bardzo dlugie ciagi cyfr to zwykle ISBN/kody/identyfikatory — czytanie ich
+    # jako gigantycznej liczby ("78 bilionow...") jest blednem; czytamy cyframi.
+    if len(s) >= 10:
+        return " ".join(_UNITS[int(d)] for d in s)
+    return int_to_cardinal(int(s))
+
+
 def expand_numbers(text: str) -> str:
-    return _NUMBER_RE.sub(lambda m: int_to_cardinal(int(m.group(0))), text)
+    return _NUMBER_RE.sub(_number_repl, text)
 
 
 # --------------------------------------------------------------------------- #

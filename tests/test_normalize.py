@@ -92,6 +92,13 @@ def test_expand_numbers_in_text():
     assert expand_numbers("Mam 3 koty.") == "Mam trzy koty."
 
 
+def test_long_code_read_digit_by_digit():
+    # ISBN/kod (>=10 cyfr) nie jest czytany jako gigantyczny liczebnik.
+    out = expand_numbers("78121415585220")
+    assert "bilion" not in out
+    assert out.startswith("siedem osiem jeden")
+
+
 # --- skroty --------------------------------------------------------------- #
 def test_abbreviations_common():
     assert expand_abbreviations("np. kot") == "na przykład kot"

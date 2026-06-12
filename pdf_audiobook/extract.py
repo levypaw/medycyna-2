@@ -128,6 +128,8 @@ def _extract_pdf(
 
     # Usun naglowki/stopki powtarzajace sie na wielu stronach.
     pages = _strip_running_headers(pages)
+    # Wyczysc wiodace strony tytulowe/redakcyjne (ISBN, copyright, kody).
+    pages = _blank_leading_front_matter(pages)
 
     title = (doc.metadata or {}).get("title") or path.stem
     chapters = _chapters_from_toc(doc, pages) or [
@@ -209,6 +211,28 @@ def _is_front_matter(name: str, text: str) -> bool:
     if len(text) < 1500 and len(_BOILERPLATE_MARKERS.findall(text)) >= 2:
         return True
     return False
+
+
+def _looks_like_front_matter_page(text: str) -> bool:
+    """Front-matter dla PDF: dane wydawnicze albo dlugi kod (ISBN/kreskowy)."""
+    if _is_front_matter("", text):
+        return True
+    # Dlugi ciag cyfr (>=10) na krotkiej stronie = ISBN/kod, nie tresc.
+    if len(text) < 1500 and re.search(r"\d{10,}", text):
+        return True
+    return False
+
+
+def _blank_leading_front_matter(pages: list[str]) -> list[str]:
+    """Czysci wiodace strony tytulowe/redakcyjne (zachowujac indeksy stron,
+    by nie zepsuc mapowania spisu tresci)."""
+    pages = list(pages)
+    for i in range(min(5, len(pages))):
+        if pages[i].strip() and _looks_like_front_matter_page(pages[i]):
+            pages[i] = ""
+        elif pages[i].strip():
+            break  # pierwsza prawdziwa strona tresci — koniec czyszczenia
+    return pages
 
 
 def _extract_epub(path: Path) -> Book:
