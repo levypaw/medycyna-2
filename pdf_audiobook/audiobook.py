@@ -29,6 +29,7 @@ class SynthOptions:
     pitch: float = 0.0   # przesuniecie wysokosci w poltonach (ujemne = nizej)
     resume: bool = False  # pomijaj fragmenty juz zsyntetyzowane (dlugie ksiazki)
     max_chunks: int | None = None  # syntetyzuj tylko pierwsze N fragmentow (probka)
+    skip_chunks: int = 0  # pomin pierwsze N fragmentow (np. strony tytulowe)
 
 
 @dataclass
@@ -116,15 +117,26 @@ def synthesize_book(
             text = normalize_text(text)
         prepared.append((ch.index, chunk_text(text, opts.max_chars)))
 
-    # Tryb probki: ogranicz do pierwszych N fragmentow (lacznie).
-    if opts.max_chunks is not None:
-        budget = opts.max_chunks
-        trimmed: list[tuple[int, list[str]]] = []
+    # Okno fragmentow: pomin pierwsze skip_chunks, potem najwyzej max_chunks
+    # (laczone liczenie przez wszystkie rozdzialy).
+    if opts.skip_chunks or opts.max_chunks is not None:
+        skip = max(0, opts.skip_chunks)
+        limit = opts.max_chunks
+        seen = 0
+        taken = 0
+        windowed: list[tuple[int, list[str]]] = []
         for idx, chunks in prepared:
-            take = chunks[:max(0, budget)]
-            trimmed.append((idx, take))
-            budget -= len(take)
-        prepared = trimmed
+            kept: list[str] = []
+            for c in chunks:
+                if seen < skip:
+                    seen += 1
+                    continue
+                if limit is not None and taken >= limit:
+                    break
+                kept.append(c)
+                taken += 1
+            windowed.append((idx, kept))
+        prepared = windowed
 
     total = sum(len(c) for _, c in prepared) or 1
 

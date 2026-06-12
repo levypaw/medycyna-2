@@ -12,6 +12,7 @@ informacji o rozdzialach, zwracany jest jeden rozdzial z calym tekstem.
 
 from __future__ import annotations
 
+import re
 import shutil
 import subprocess
 import tempfile
@@ -187,6 +188,29 @@ def _strip_running_headers(pages: list[str]) -> list[str]:
 # --------------------------------------------------------------------------- #
 # EPUB
 # --------------------------------------------------------------------------- #
+# Pliki/strony spoza wlasciwej tresci ksiazki (okladka, tytulowa, spis tresci,
+# strona redakcyjna). Pomijamy je, by lektor nie czytal "napisow niezwiazanych".
+_FRONT_MATTER_NAMES = re.compile(
+    r"(cover|nav|toc|contents|spis|copyright|colophon|title[-_]?page|"
+    r"titlepage|redak|imprint)", re.IGNORECASE
+)
+_BOILERPLATE_MARKERS = re.compile(
+    r"ISBN|copyright|©|wszelkie prawa|all rights reserved|tytuł oryginału|"
+    r"wydawnictwo|redakcja|korekta|projekt okładki|skład|łamanie|"
+    r"przekład|tłumaczenie", re.IGNORECASE
+)
+
+
+def _is_front_matter(name: str, text: str) -> bool:
+    """Heurystyka: czy dany dokument EPUB to strona spoza tresci ksiazki."""
+    if _FRONT_MATTER_NAMES.search(name or ""):
+        return True
+    # Krotka strona nasycona danymi wydawniczymi (ISBN, copyright, redakcja...).
+    if len(text) < 1500 and len(_BOILERPLATE_MARKERS.findall(text)) >= 2:
+        return True
+    return False
+
+
 def _extract_epub(path: Path) -> Book:
     try:
         from ebooklib import epub
@@ -206,6 +230,8 @@ def _extract_epub(path: Path) -> Book:
         soup = BeautifulSoup(item.get_content(), "html.parser")
         text = soup.get_text("\n").strip()
         if not text:
+            continue
+        if _is_front_matter(item.get_name(), text):
             continue
         heading = soup.find(["h1", "h2", "h3"])
         chap_title = heading.get_text(" ").strip() if heading else f"Rozdzial {i + 1}"

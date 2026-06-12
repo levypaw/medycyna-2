@@ -39,6 +39,17 @@ def test_max_chunks_limits_synthesis(tmp_path):
     assert backend.calls == 3
 
 
+def test_skip_chunks_window(tmp_path):
+    book = Book(title="T", chapters=[
+        Chapter(title="R1", text="A. B. C. D. E. F. G. H.", index=0),
+    ])
+    backend = _CountingBackend()
+    # Pomin 2, wez najwyzej 3 -> dokladnie 3 syntezy.
+    opts = SynthOptions(max_chars=2, skip_chunks=2, max_chunks=3)
+    synthesize_book(book, backend, tmp_path, opts)
+    assert backend.calls == 3
+
+
 def test_resume_skips_done_chunks(tmp_path):
     book = Book(title="T", chapters=[
         Chapter(title="R1", text="Zdanie jedno. Zdanie dwa. Zdanie trzy.", index=0),

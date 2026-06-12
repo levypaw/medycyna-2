@@ -96,8 +96,11 @@ def _build_parser() -> argparse.ArgumentParser:
                    help="Wznow: pomijaj fragmenty juz zsyntetyzowane w tym katalogu "
                         "(dla dlugich ksiazek — przezyje przerwanie)")
     p.add_argument("--max-chunks", type=int, default=None,
-                   help="Tryb probki: syntetyzuj tylko pierwsze N fragmentow "
+                   help="Tryb probki: syntetyzuj tylko N fragmentow "
                         "(np. 20 ~ 2 strony) — szybki test na duzej ksiazce")
+    p.add_argument("--skip-chunks", type=int, default=0,
+                   help="Pomin pierwsze N fragmentow (np. strony tytulowe/copyright "
+                        "EPUB). Laczy sie z --max-chunks w okno probki")
     p.add_argument("--dry-run", action="store_true",
                    help="Tylko wyciagnij i wyczysc tekst, bez syntezy")
     p.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
@@ -189,6 +192,7 @@ def main(argv: list[str] | None = None) -> int:
             pitch=args.pitch,
             resume=args.resume,
             max_chunks=args.max_chunks,
+            skip_chunks=args.skip_chunks,
         )
         chapters_out = synthesize_book(
             book, backend, args.out_dir, opts, progress=_progress
