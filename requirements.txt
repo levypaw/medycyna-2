@@ -1,0 +1,23 @@
+# Ekstrakcja tekstu
+pymupdf>=1.24        # PDF
+ebooklib>=0.18       # EPUB
+beautifulsoup4>=4.12 # parsowanie HTML z EPUB
+
+# OCR dla skanowanych PDF (opcjonalnie)
+pytesseract>=0.3.10  # most do binarki Tesseract
+pillow>=10.0         # renderowane strony jako obrazy
+
+# Lokalne klonowanie barwy (opcjonalnie) — wymaga tez PyTorch, najlepiej GPU
+coqui-tts>=0.25.1,<0.26       # XTTS-v2 (spojny zestaw ponizej)
+transformers>=4.43,<=4.46.2   # ma isin_mps_friendly wymagany przez coqui-tts
+torch>=2.1,<2.5               # <2.5: torchaudio.load bez torchcodec
+torchaudio>=2.1,<2.5
+soundfile>=0.12               # dekoder WAV dla torchaudio.load
+
+# Backend chmurowy (opcjonalnie)
+requests>=2.31       # ElevenLabs API
+
+# Narzedzia zewnetrzne (instalowane poza pip):
+#   * Piper  (lokalny TTS)         -> https://github.com/rhasspy/piper
+#   * Calibre (ebook-convert, MOBI) -> https://calibre-ebook.com
+#   * ffmpeg (laczenie/M4B)         -> https://ffmpeg.org

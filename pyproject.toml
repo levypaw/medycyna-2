@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pdf-audiobook"
+version = "0.1.0"
+description = "Zamiana ksiazek (PDF/MOBI/EPUB) na audiobooka glosem lektora"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pymupdf>=1.24",
+    "ebooklib>=0.18",
+    "beautifulsoup4>=4.12",
+]
+
+[project.optional-dependencies]
+elevenlabs = ["requests>=2.31"]
+# Spojny zestaw dla XTTS (przypiety celowo):
+#  * coqui-tts 0.25.x dziala z transformers <=4.46.2 (ma isin_mps_friendly);
+#    nowsze coqui-tts (0.27.x) wymagaja transformers>=4.57, ktore te funkcje
+#    usunely -> import XTTS sie wywala.
+#  * torch/torchaudio < 2.5: nowszy torchaudio (>=2.9) wymaga osobnego pakietu
+#    `torchcodec` do wczytania audio, czego coqui-tts 0.25 nie zaklada.
+#  * soundfile: dekoder WAV uzywany przez torchaudio.load.
+xtts = [
+    "coqui-tts>=0.25.1,<0.26",
+    "transformers>=4.43,<=4.46.2",
+    "torch>=2.1,<2.5",
+    "torchaudio>=2.1,<2.5",
+    "soundfile>=0.12",
+]
+ocr = ["pytesseract>=0.3.10", "pillow>=10.0"]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+pdf-audiobook = "pdf_audiobook.cli:main"
+
+[tool.setuptools]
+packages = ["pdf_audiobook"]
