@@ -28,6 +28,7 @@ class SynthOptions:
     normalize: bool = True
     pitch: float = 0.0   # przesuniecie wysokosci w poltonach (ujemne = nizej)
     resume: bool = False  # pomijaj fragmenty juz zsyntetyzowane (dlugie ksiazki)
+    max_chunks: int | None = None  # syntetyzuj tylko pierwsze N fragmentow (probka)
 
 
 @dataclass
@@ -114,6 +115,17 @@ def synthesize_book(
         if opts.normalize:
             text = normalize_text(text)
         prepared.append((ch.index, chunk_text(text, opts.max_chars)))
+
+    # Tryb probki: ogranicz do pierwszych N fragmentow (lacznie).
+    if opts.max_chunks is not None:
+        budget = opts.max_chunks
+        trimmed: list[tuple[int, list[str]]] = []
+        for idx, chunks in prepared:
+            take = chunks[:max(0, budget)]
+            trimmed.append((idx, take))
+            budget -= len(take)
+        prepared = trimmed
+
     total = sum(len(c) for _, c in prepared) or 1
 
     done = 0

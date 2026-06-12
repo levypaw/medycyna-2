@@ -29,6 +29,16 @@ class _CountingBackend(TTSBackend):
             w.writeframes(b"\x00\x00" * 100)
 
 
+def test_max_chunks_limits_synthesis(tmp_path):
+    book = Book(title="T", chapters=[
+        Chapter(title="R1", text="A. B. C. D. E. F. G. H.", index=0),
+    ])
+    backend = _CountingBackend()
+    opts = SynthOptions(max_chars=2, max_chunks=3)
+    synthesize_book(book, backend, tmp_path, opts)
+    assert backend.calls == 3
+
+
 def test_resume_skips_done_chunks(tmp_path):
     book = Book(title="T", chapters=[
         Chapter(title="R1", text="Zdanie jedno. Zdanie dwa. Zdanie trzy.", index=0),
